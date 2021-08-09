@@ -1,11 +1,11 @@
 FC=mpif90
-FFLAGS=-O3 -fopenmp -std=f2003 -g -Wall -fbounds-check
-SRC=helper.f90 variables.f90 md.f90
+FFLAGS=-O3 -fopenmp -std=f2003 -g -Wall -fbounds-check -fall-intrinsics 
+SRC=constants.f03 variables.f03 math.f03 helper.f03 md.f03
 TARGET=MD
 BINDIR=../bin
-OBJ=${SRC:.f90=.o}
+OBJ=${SRC:.f03=.o}
 
-%.o: %.f90
+%.o: %.f03
 	${FC} ${FFLAGS} -o $@ -c $<
 
 ${BINDIR}/${TARGET}: ${OBJ}
@@ -13,4 +13,4 @@ ${BINDIR}/${TARGET}: ${OBJ}
 
 
 clean:
-	@rm -f ../obj/*.mod ../obj/*.o ../bin/${TARGET}
+	@rm -f *.mod *.o ../obj/*.mod ../obj/*.o ../bin/${TARGET}
