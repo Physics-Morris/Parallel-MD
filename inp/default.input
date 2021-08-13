@@ -1,3 +1,11 @@
 &basics
     sim_dimension = 3
 /
+
+&particles
+    total_particles = 100
+/
+
+&output
+    number_snapshots = 10
+/

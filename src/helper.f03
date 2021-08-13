@@ -1,22 +1,27 @@
 module helper
     use variables
-    character(len=5), dimension(12) :: vt100_control = (/'[39m','[30m','[31m',&
-    '[32m','[33m','[34m','[35m','[36m','[1m ','[2m ','[4m ','[0m '/)
-    integer, parameter :: c_term_default_colour = 1
-    integer, parameter :: c_term_black = 2
-    integer, parameter :: c_term_red = 3
-    integer, parameter :: c_term_green = 4
-    integer, parameter :: c_term_yellow = 5
-    integer, parameter :: c_term_blue = 6
-    integer, parameter :: c_term_magenta = 7
-    integer, parameter :: c_term_cyan = 8
-    integer, parameter :: c_term_bold = 9
-    integer, parameter :: c_term_dim = 10
-    integer, parameter :: c_term_underline = 11
-    integer, parameter :: c_term_reset_attributes = 12
-    integer, parameter :: c_term_max = 12
+    use mpi
+    implicit none
 
-    namelist /basics/ sim_dimension
+    character(len=5), dimension(12) :: vt100_control = (/'[39m','[30m','[31m', &
+    '[32m','[33m','[34m','[35m','[36m','[1m ','[2m ','[4m ','[0m '/)
+    integer, parameter :: term_default_colour = 1
+    integer, parameter :: term_black = 2
+    integer, parameter :: term_red = 3
+    integer, parameter :: term_green = 4
+    integer, parameter :: term_yellow = 5
+    integer, parameter :: term_blue = 6
+    integer, parameter :: term_magnenta = 7
+    integer, parameter :: term_cyan = 8
+    integer, parameter :: term_bold = 9
+    integer, parameter :: term_dim = 10
+    integer, parameter :: term_underline = 11
+    integer, parameter :: term_reset_attributes = 12
+    integer, parameter :: term_max = 12
+
+    namelist / basics    / sim_dimension
+    namelist / particles / total_particles
+    namelist / output    / number_snapshots
 
     contains
 
@@ -26,70 +31,61 @@ module helper
             character(len=*)            :: loc
             logical                     :: lexist
 
+            call print_empty_line(1)
+            call set_term_color(term_default_colour)
+            write(*, '(A)', advance='no') '  Reading input file ... '
             inquire (file=loc,exist=lexist)
             if (lexist) then
-                CALL set_term_attr(6)
-                write(*, *)
-                write(*, *) ' Input file exist !'
-                write(*, *)
-                CALL set_term_attr(6)
-                write(*, *) ' Try to read from input file... '
-                write(*, *)
-                CALL set_term_attr(12)
-                call sleep(2)
+                call successful
+                call set_term_color(term_default_colour)
             else
-                CALL set_term_attr(3)
-                write(*, *)
-                write(*, *) ' This input file ', trim(loc), ' does not exist! '
-                write(*, *)
-                write(*, *) ' Stopping the program... '
-                write(*, *)
-                CALL set_term_attr(12)
-                call sleep(2)
+                call failed
+                call set_term_color(term_default_colour)
+                call print_empty_line(1)
+                write(*, *) ' Input file does not exist, stopping the program ... '
+                call print_empty_line(1)
                 stop
             end if
 
             open(12, file=trim(loc))
             read(12, nml=basics)
-            CALL set_term_attr(5)
-            write(*, *) ' Reading input file successfully !'
-            CALL set_term_attr(12)
-            call sleep(2)
-            call print_simulation_parameter
+            read(12, nml=particles)
+            read(12, nml=output)
+            call sleep(1)
+            call print_simulation_parameter('full')
+            call sleep(1)
             
         end subroutine get_input_file
 
 
-        subroutine print_simulation_parameter
+        subroutine print_simulation_parameter(status)
             implicit none
-            write(*, *)
-            write(*, *)
-            write(*, *) ' ======================================= '
-            CALL set_term_attr(7)
-            write(*, *) ' Simulation Dimension is', sim_dimension
-            CALL set_term_attr(12)
-            write(*, *) ' ======================================= '
-            write(*, *)
-            write(*, *)
-            CALL set_term_attr(10)
-            write(*, *) ' Starting program in 3 sec ... '
-            CALL set_term_attr(12)
-            call sleep(3)
+            character(len=*)            :: status
+            if (status == 'full') then
+                call print_empty_line(2)
+                write(*, *) ' =============================================='
+                call set_term_color(term_default_colour)
+                write(*, *) ' Simulation Dimension:       ', sim_dimension
+                write(*, *) ' Total number of particles:  ', total_particles
+                write(*, *) ' Number of output snapshots: ', number_snapshots
+                call set_term_color(term_default_colour)
+                write(*, *) ' =============================================='
+                call print_empty_line(2)
+            end if
         end subroutine print_simulation_parameter
 
 
         subroutine get_cmd_arg
             implicit none
-            character(len=*), parameter :: VERSION = '1.0'
             character(len=32)           :: arg
             integer                     :: i
 
             if (command_argument_count() .eq. 0) then
-                CALL set_term_attr(3)
-                write(*, *)
+                CALL set_term_color(3)
+                call print_empty_line(1)
                 write(*, *) ' Need to sepcify input file'
-                write(*, *)
-                CALL set_term_attr(12)
+                call print_empty_line(1)
+                CALL set_term_color(12)
                 call print_help()
                 stop
             end if
@@ -98,7 +94,9 @@ module helper
                 call get_command_argument(i, arg)
                 select case (arg)
                     case ('-v', '--version')
-                        print '(2a)', 'version ', VERSION
+                        call print_empty_line(2)
+                        print '(2a)', '             version ', VERSION
+                        call MD_logo
                         stop
         
                     case ('-h', '--help')
@@ -115,10 +113,8 @@ module helper
                         stop
 
                     case ('-d', '--default')
-                        CALL set_term_attr(3)
-                        write(*, *)
+                        call print_empty_line(1)
                         write(*, *) ' Useing default input file... '
-                        CALL set_term_attr(12)
                         call get_input_file('../inp/default.input')
                         exit
 
@@ -136,80 +132,147 @@ module helper
             character(len=5) :: zone
 
             !> Print the date and time
-            CALL set_term_attr(5)
-            write (*, *)
+            call set_term_color(5)
+            call print_empty_line(1)
             call date_and_time(DATE=date, TIME=time, ZONE=zone)
             write (*, '(a, a, "-", a, "-", a, a, a, ":", a)') ' Current date and time: ', &
             date(1:4), date(5:6), date(7:8), '  ', time(1:2), time(3:4)
-            write (*, *)
-            CALL set_term_attr(12)
+            call print_empty_line(1)
+            call set_term_color(12)
         end subroutine print_time
 
         subroutine print_help
             implicit none
-            print '(a, /)', ' command-line options:'
-            print '(a)',    '  -i, --input            , entering input file location'
-            print '(a)',    '  -d, --default          , use default input file for testing'
-            print '(a)',    '  -v, --version          , check out the version of the program'
-            print '(a)', '  -h, --help             , see hlep for possible command line arguments'
-            print '(a, /)', '  -t, --time             , print current date and time'
+            call set_term_color(9)
+            write(*, '(a, /)')   '                          command-line options'
+            write(*, *)          ' ======================================================================='
+            write(*, '(a)')      '  -i, --input            , entering input file location'
+            write(*, '(a)')      '  -d, --default          , use default input file for testing'
+            write(*, '(a)')      '  -v, --version          , check out the version of the program'
+            write(*, '(a)')      '  -h, --help             , see hlep for possible command line arguments'
+            write(*, '(a)')      '  -t, --time             , print current date and time'
+            write(*, *)          ' ======================================================================='
+            call set_term_color(12)
+            call print_empty_line(1)
         end subroutine print_help
 
 
         subroutine welcome
             implicit none
-            CALL set_term_attr(c_term_bold)
-            CALL set_term_attr(c_term_yellow)
-            WRITE(*,*)
-            WRITE(*,*)
-            WRITE(*,*)
-            WRITE(*,*)
-
-            CALL set_term_attr(3)
-            WRITE(*,'(A)') '        ###     ###                    #########     #########       #######'
-            CALL set_term_attr(1)
-            WRITE(*,'(A)') '       ####   ####                    ###########   #########     ######### '
-            CALL set_term_attr(2)
-            CALL set_term_attr(c_term_cyan)
-            CALL set_term_attr(c_term_yellow)
-            WRITE(*,'(A)') '      -----------   ---    -----     ----    ----      ---       -----      '
-            CALL set_term_attr(4)
-            WRITE(*,'(A)') '     ### ### ###   ####   ######    ###########       ###      ######       '
-            CALL set_term_attr(5)
-            WRITE(*,'(A)') '    ###     ###     ##   ###       #########         ###      #######       '
-            CALL set_term_attr(6)
-            WRITE(*,'(A)') '   ###     ###     ##   ###       #####             ###       ######        '
-            CALL set_term_attr(7)
-            WRITE(*,'(A)') '  ###     ###     ##    ###      #####          ##########     ########     '
-            CALL set_term_attr(8)
-            WRITE(*,'(A)') ' ###     ###     ###    #####   #####          ##########      #######      '
-            WRITE(*,*)
-
-            CALL set_term_attr(c_term_green)
-            WRITE(*,*)
-            CALL set_term_attr(c_term_default_colour)
-            CALL set_term_attr(c_term_reset_attributes)
+            call MD_logo
+            call set_term_color(term_green)
+            call print_empty_line(1)
+            CALL set_term_color(term_default_colour)
+            call set_term_color(term_reset_attributes)
         end subroutine welcome
 
-
-        subroutine set_term_attr(controlcode)
+        
+        subroutine MD_logo
             implicit none
-            ! integer, parameter :: c_term_default_colour = 1
-            ! integer, parameter :: c_term_black = 2
-            ! integer, parameter :: c_term_red = 3
-            ! integer, parameter :: c_term_green = 4
-            ! integer, parameter :: c_term_yellow = 5
-            ! integer, parameter :: c_term_blue = 6
-            ! integer, parameter :: c_term_magenta = 7
-            ! integer, parameter :: c_term_cyan = 8
-            ! integer, parameter :: c_term_bold = 9
-            ! integer, parameter :: c_term_dim = 10
-            ! integer, parameter :: c_term_underline = 11
-            ! integer, parameter :: c_term_reset_attributes = 12
-            ! integer, parameter :: c_term_max = 12
+            call sleep(1)
+            call print_empty_line(1)
+            CALL set_term_color(term_green)
+            write(*, *) ' All greens, ready to go'
+            call print_empty_line(1)
+            CALL set_term_color(term_default_colour)
+            write(*, *) ' Starting program in 3 sec ... '
+            call sleep(3)
+            call set_term_color(term_bold)
+            call set_term_color(term_yellow)
+            call print_empty_line(4)
+            call set_term_color(3)
+            write(*,'(A)') '        ###     ###     ######## '
+            call set_term_color(1)
+            write(*,'(A)') '       ####   ####     ######### '
+            call set_term_color(2)
+            call set_term_color(term_cyan)
+            call set_term_color(term_yellow)
+            write(*,'(A)') '      -----------     --      -- '
+            call set_term_color(4)
+            write(*,'(A)') '     ### ### ###     ##       ## '
+            call set_term_color(5)
+            write(*,'(A)') '    ###     ###     ##       ##  '
+            call set_term_color(6)
+            write(*,'(A)') '   ###     ###     ##       ##   '
+            call set_term_color(7)
+            write(*,'(A)') '  ###     ###     ##########     '
+            call set_term_color(8)
+            write(*,'(A)') ' ###     ###     #########       '
+            call print_empty_line(1)
+            call set_term_color(12)
+        end subroutine MD_logo
+
+
+        subroutine MICPIC_logo
+            implicit none
+            call sleep(1)
+            call print_empty_line(1)
+            CALL set_term_color(term_green)
+            write(*, *) ' All greens, ready to go'
+            call print_empty_line(1)
+            write(*, *) ' Starting program in 3 sec ... '
+            CALL set_term_color(12)
+            call sleep(3)
+            CALL set_term_color(term_bold)
+            CALL set_term_color(term_yellow)
+            call print_empty_line(4)
+            call set_term_color(3)
+            write(*,'(A)') '        ###     ###                    #########     #########       #######'
+            call set_term_color(1)
+            write(*,'(A)') '       ####   ####                    ###########   #########     ######### '
+            call set_term_color(2)
+            call set_term_color(term_cyan)
+            call set_term_color(term_yellow)
+            write(*,'(A)') '      -----------   ---    -----     ----    ----      ---       -----      '
+            call set_term_color(4)
+            write(*,'(A)') '     ### ### ###   ####   ######    ###########       ###      ######       '
+            call set_term_color(5)
+            write(*,'(A)') '    ###     ###     ##   ###       #########         ###      #######       '
+            call set_term_color(6)
+            write(*,'(A)') '   ###     ###     ##   ###       #####             ###       ######        '
+            call set_term_color(7)
+            write(*,'(A)') '  ###     ###     ##    ###      #####          ##########     ########     '
+            call set_term_color(8)
+            write(*,'(A)') ' ###     ###     ###    #####   #####          ##########      #######      '
+            call print_empty_line(1)
+            call set_term_color(12)
+        end subroutine MICPIC_logo
+
+
+        subroutine print_empty_line(num)
+            implicit none
+            integer             :: i, num
+            do i = 1, num
+                write(*, *)
+            end do
+        end subroutine print_empty_line
+
+
+        subroutine set_term_color(controlcode)
+            implicit none
             integer, intent(in) :: controlcode
             write(*,'(a)',advance='no') achar(27) // trim(vt100_control(controlcode))
-        end subroutine set_term_attr
+        end subroutine set_term_color
+
+
+        subroutine successful
+            implicit none
+            call sleep(1)
+            call set_term_color(term_green)
+            green_light = .True.
+            write(*, *) 'Successful'
+            call set_term_color(term_default_colour)
+        end subroutine successful
+
+
+        subroutine failed
+            implicit none
+            call sleep(1)
+            call set_term_color(term_red)
+            green_light = .False.
+            write(*, *) 'Failed'
+            call set_term_color(term_default_colour)
+        end subroutine failed
 
 
 end module helper

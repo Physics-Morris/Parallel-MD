@@ -22,7 +22,7 @@ UNKNOWN 0 0) (UNKNOWN 0 0 0 0 UNKNOWN ()) 0 0 () () 0 () () () 0 0)
 4 'print_help' 'helper' '' 1 ((PROCEDURE UNKNOWN-INTENT MODULE-PROC DECL
 UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0 0 UNKNOWN ()) 0 0 () () 0 () () ()
 0 0)
-5 'set_term_attr' 'helper' '' 1 ((PROCEDURE UNKNOWN-INTENT MODULE-PROC
+5 'set_term_color' 'helper' '' 1 ((PROCEDURE UNKNOWN-INTENT MODULE-PROC
 DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0 0 UNKNOWN ()) 6 0 (7) () 0 ()
 () () 0 0)
 8 'welcome' 'helper' '' 1 ((PROCEDURE UNKNOWN-INTENT MODULE-PROC DECL
@@ -32,5 +32,5 @@ UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0 0 UNKNOWN ()) 0 0 () () 0 () () ()
 DUMMY) (INTEGER 4 0 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
 )
 
-('get_cmd_arg' 0 2 'helper' 0 3 'print_help' 0 4 'set_term_attr' 0 5
+('get_cmd_arg' 0 2 'helper' 0 3 'print_help' 0 4 'set_term_color' 0 5
 'welcome' 0 8)
