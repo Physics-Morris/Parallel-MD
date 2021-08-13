@@ -9,6 +9,8 @@ program part_listest
   type(part_data), target :: part_c
   type(part_ptr) :: ptr
 
+  type(particle), dimension(:), allocatable :: local
+
   integer  ::  i
 
   ! Initialize two data objects
@@ -49,27 +51,55 @@ program part_listest
   print *, 'Inserting node with data:', ptr%p%pos_x
   print *, 'Inserting node with data:', ptr%p%pos_y
 
+  !> Insert part_c into the list
+  allocate(ptr%p)
+  ptr%p%pos_x = 7.d0
+  ptr%p%pos_y = 8.d0
+  ! ptr%p => part_c
+  call part_list_insert(self=part_list_next(part_list_next(local_part)), DATA=transfer(ptr, mold=part_list_data))
+  print *, 'Inserting node with data:', ptr%p%pos_x
+  print *, 'Inserting node with data:', ptr%p%pos_y
+
 
   !> Get the head node
-  ptr = transfer(part_list_get(local_part), ptr)
+  ptr = transfer(part_list_get_current(local_part), ptr)
   print *, 'Head node data:', ptr%p%pos_x
   print *, 'Head node data:', ptr%p%pos_y
 
   !> Get the next node
-  ptr = transfer(part_list_get(part_list_next(local_part)), ptr)
+  ptr = transfer(part_list_get_current(part_list_next(local_part)), ptr)
   print *, 'Second node data:', ptr%p%pos_x
   print *, 'Second node data:', ptr%p%pos_y
 
   !> Get the next node
-  ptr = transfer(part_list_get(part_list_next(part_list_next(local_part))), ptr)
+  ptr = transfer(part_list_get_current(part_list_next(part_list_next(local_part))), ptr)
   print *, 'Third node data:', ptr%p%pos_x
   print *, 'Third node data:', ptr%p%pos_y
 
+  !> Get the next node
+  ptr = transfer(part_list_get_current(part_list_next(part_list_next(part_list_next(local_part)))), ptr)
+  print *, 'Forth node data:', ptr%p%pos_x
+  print *, 'Forth node data:', ptr%p%pos_y
+
   !> Get the specific node
-  ptr = transfer(part_list_get_index(local_part, i=3), ptr)
+  ! i = 1
+  ! ptr = transfer(part_list_get_index(local_part, index=i), ptr)
+  ! print *, i, 'th node data:', ptr%p%pos_x
+  ! print *, i, 'th node data:', ptr%p%pos_y
+  do i = 1, 3
+    ptr = transfer(part_list_get_index(local_part, index=i), ptr)
+    print *, i, 'th node data:', ptr%p%pos_x
+    print *, i, 'th node data:', ptr%p%pos_y
+  end do
+  i = 2
+  ptr = transfer(part_list_get_index(local_part, index=i), ptr)
   print *, i, 'th node data:', ptr%p%pos_x
   print *, i, 'th node data:', ptr%p%pos_y
 
   !> Free the list
   call part_list_free(local_part)
+
+  !> try another method
+  allocate(local(5))
+
 end program part_listest

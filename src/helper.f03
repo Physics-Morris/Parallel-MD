@@ -1,5 +1,5 @@
 module helper
-    use variables
+    use shared_data
     use mpi
     implicit none
 
@@ -19,22 +19,23 @@ module helper
     integer, parameter :: term_reset_attributes = 12
     integer, parameter :: term_max = 12
 
-    namelist / basics    / sim_dimension
-    namelist / particles / total_particles
-    namelist / output    / number_snapshots
+    namelist / basics_block / sim_dimension, x_min, x_max, y_min, y_max, z_min, z_max
+    namelist / particles_block / total_particles, particle_mass, particle_charge, particle_distribution
+    namelist / output_block / number_snapshots
 
     contains
 
 
-        subroutine get_input_file(loc)
+        subroutine get_input_file(loc, ierr)
             implicit none
             character(len=*)            :: loc
             logical                     :: lexist
+            integer                     :: ierr
 
             call print_empty_line(1)
             call set_term_color(term_default_colour)
-            write(*, '(A)', advance='no') '  Reading input file ... '
-            inquire (file=loc,exist=lexist)
+            write(*, '(A)', advance='no') '  Inquire input file ... '
+            inquire (file=trim(loc), exist=lexist)
             if (lexist) then
                 call successful
                 call set_term_color(term_default_colour)
@@ -47,10 +48,20 @@ module helper
                 stop
             end if
 
-            open(12, file=trim(loc))
-            read(12, nml=basics)
-            read(12, nml=particles)
-            read(12, nml=output)
+            write(*, '(A, A, A)', advance='no') '  Reading input file (', trim(loc), ') ... '
+            call sleep(1)
+            open(10, file=trim(loc), status='old', action='read', iostat=ierr)
+            if (ierr .eq. 0) then
+                read(10, nml=basics_block)
+                read(10, nml=particles_block)
+                read(10, nml=output_block)
+                call successful
+                close(10)
+            else
+                call failed
+                write(*, '(A, I5)') '  error message number: ', ierr
+                stop
+            end if
             call sleep(1)
             call print_simulation_parameter('full')
             call sleep(1)
@@ -63,13 +74,22 @@ module helper
             character(len=*)            :: status
             if (status == 'full') then
                 call print_empty_line(2)
-                write(*, *) ' =============================================='
+                write(*, *) ' -----------------------------------------------'
                 call set_term_color(term_default_colour)
-                write(*, *) ' Simulation Dimension:       ', sim_dimension
-                write(*, *) ' Total number of particles:  ', total_particles
-                write(*, *) ' Number of output snapshots: ', number_snapshots
+                write(*, '(A, I19)')     '  Simulation dimension:       ', sim_dimension
+                write(*, '(A, ES19.2)')  '  x_min of the system:        ', x_min
+                write(*, '(A, ES19.2)')  '  x_max of the system:        ', x_max
+                write(*, '(A, ES19.2)')  '  y_min of the system:        ', y_min
+                write(*, '(A, ES19.2)')  '  y_max of the system:        ', y_max
+                write(*, '(A, ES19.2)')  '  z_min of the system:        ', z_min
+                write(*, '(A, ES19.2)')  '  z_max of the system:        ', z_max
+                write(*, '(A, I19)')     '  Total number of particles:  ', total_particles
+                write(*, '(A, ES19.2)')  '  Particle mass:              ', particle_mass
+                write(*, '(A, ES19.2)')  '  Particle charge:            ', particle_charge
+                write(*, '(A, A19)')     '  Particle distribution:      ', particle_distribution
+                write(*, '(A, I19)')     '  Number of output snapshots: ', number_snapshots
                 call set_term_color(term_default_colour)
-                write(*, *) ' =============================================='
+                write(*, *) ' -----------------------------------------------'
                 call print_empty_line(2)
             end if
         end subroutine print_simulation_parameter
@@ -78,7 +98,7 @@ module helper
         subroutine get_cmd_arg
             implicit none
             character(len=32)           :: arg
-            integer                     :: i
+            integer                     :: i, ierr
 
             if (command_argument_count() .eq. 0) then
                 CALL set_term_color(3)
@@ -105,7 +125,7 @@ module helper
 
                     case ('-i', '--input')
                         call get_command_argument(i+1, arg)
-                        call get_input_file(arg)
+                        call get_input_file(arg, ierr)
                         exit
 
                     case ('-t', '--time')
@@ -115,7 +135,7 @@ module helper
                     case ('-d', '--default')
                         call print_empty_line(1)
                         write(*, *) ' Useing default input file... '
-                        call get_input_file('../inp/default.input')
+                        call get_input_file('../inp/default', ierr)
                         exit
 
                     case default
@@ -181,23 +201,23 @@ module helper
             call set_term_color(term_yellow)
             call print_empty_line(4)
             call set_term_color(3)
-            write(*,'(A)') '        ###     ###     ######## '
+            write(*,'(A)') '            ###     ###     ######## '
             call set_term_color(1)
-            write(*,'(A)') '       ####   ####     ######### '
+            write(*,'(A)') '           ####   ####     ######### '
             call set_term_color(2)
             call set_term_color(term_cyan)
             call set_term_color(term_yellow)
-            write(*,'(A)') '      -----------     --      -- '
+            write(*,'(A)') '          -----------     --      -- '
             call set_term_color(4)
-            write(*,'(A)') '     ### ### ###     ##       ## '
+            write(*,'(A)') '         ### ### ###     ##       ## '
             call set_term_color(5)
-            write(*,'(A)') '    ###     ###     ##       ##  '
+            write(*,'(A)') '        ###     ###     ##       ##  '
             call set_term_color(6)
-            write(*,'(A)') '   ###     ###     ##       ##   '
+            write(*,'(A)') '       ###     ###     ##       ##   '
             call set_term_color(7)
-            write(*,'(A)') '  ###     ###     ##########     '
+            write(*,'(A)') '      ###     ###     ##########     '
             call set_term_color(8)
-            write(*,'(A)') ' ###     ###     #########       '
+            write(*,'(A)') '     ###     ###     #########       '
             call print_empty_line(1)
             call set_term_color(12)
         end subroutine MD_logo
@@ -217,23 +237,23 @@ module helper
             CALL set_term_color(term_yellow)
             call print_empty_line(4)
             call set_term_color(3)
-            write(*,'(A)') '        ###     ###                    #########     #########       #######'
+            write(*,'(A)') '            ###     ###                    #########     #########       #######'
             call set_term_color(1)
-            write(*,'(A)') '       ####   ####                    ###########   #########     ######### '
+            write(*,'(A)') '           ####   ####                    ###########   #########     ######### '
             call set_term_color(2)
             call set_term_color(term_cyan)
             call set_term_color(term_yellow)
-            write(*,'(A)') '      -----------   ---    -----     ----    ----      ---       -----      '
+            write(*,'(A)') '          -----------   ---    -----     ----    ----      ---       -----      '
             call set_term_color(4)
-            write(*,'(A)') '     ### ### ###   ####   ######    ###########       ###      ######       '
+            write(*,'(A)') '         ### ### ###   ####   ######    ###########       ###      ######       '
             call set_term_color(5)
-            write(*,'(A)') '    ###     ###     ##   ###       #########         ###      #######       '
+            write(*,'(A)') '        ###     ###     ##   ###       #########         ###      #######       '
             call set_term_color(6)
-            write(*,'(A)') '   ###     ###     ##   ###       #####             ###       ######        '
+            write(*,'(A)') '       ###     ###     ##   ###       #####             ###       ######        '
             call set_term_color(7)
-            write(*,'(A)') '  ###     ###     ##    ###      #####          ##########     ########     '
+            write(*,'(A)') '      ###     ###     ##    ###      #####          ##########     ########     '
             call set_term_color(8)
-            write(*,'(A)') ' ###     ###     ###    #####   #####          ##########      #######      '
+            write(*,'(A)') '     ###     ###     ###    #####   #####          ##########      #######      '
             call print_empty_line(1)
             call set_term_color(12)
         end subroutine MICPIC_logo

@@ -14,8 +14,11 @@ module particles_list
     !> insert part list data into the particle list
     public :: part_list_insert
     public :: part_list_put
-    public :: part_list_get
+    !> get current data at current NODE
+    public :: part_list_get_current
+    !> get data at ith index NODE
     public :: part_list_get_index
+    !> go to next in part_list
     public :: part_list_next
 
     !> particle data type
@@ -25,6 +28,7 @@ module particles_list
 
     !> A public variable to use as a MOLD for transfer()
     integer, dimension(:), allocatable :: part_list_data
+
 
     !> Linked list node data type
     type :: part_list
@@ -129,22 +133,30 @@ module particles_list
 
 
         !> Return the DATA stored in the node SELF
-        function part_list_get(self) result(data)
+        function part_list_get_current(self) result(data)
             type(part_list), pointer :: self
             integer, dimension(:), pointer :: data
             data => self%data
-        end function part_list_get
+        end function part_list_get_current
 
 
         !> get DATA stored in ith index
         function part_list_get_index(self, index) result(data)
             type(part_list), pointer :: self
+            type(part_list), pointer :: indexNode
             integer, dimension(:), pointer :: data
             integer :: index, i
-            do i = 0, index-2
-                self = self%next
-            end do
-            data => self%data
+
+            nullify(indexNode)
+            if (index == 1) then
+                data => self%data
+            else
+                indexNode => self%next
+                do i = 1, index-2
+                    indexNode = indexNode%next
+                end do
+                data => indexNode%data
+            end if
         end function
 
 

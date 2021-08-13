@@ -1,0 +1,13 @@
+&basics_block
+sim_dimension=3
+/
+
+&species_block
+total_particles=100
+species_distribution='dd'
+/
+!
+!&output_block
+!number_snapshots=100
+!/
+

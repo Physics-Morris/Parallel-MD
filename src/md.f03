@@ -1,9 +1,10 @@
 program MD
-    use variables
+    use shared_data
     use helper
     use mpi_routines
     use mpi
-    use variables
+    use shared_data
+    use particle
     implicit none
     
     green_light = .False.

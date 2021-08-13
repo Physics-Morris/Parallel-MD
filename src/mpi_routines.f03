@@ -2,7 +2,8 @@ module mpi_routines
     use mpi
     use constants
     use helper
-    use variables
+    use shared_data
+    use particle
     implicit none
     
     contains
@@ -58,9 +59,13 @@ module mpi_routines
         integer         :: numprocs, ierr
 
         call mpi_comm_size(mpi_comm_world, numprocs, ierr)
-        write(*, '(A)', advance='no') '  Allocating particles into processes ... '
-        call successful
-        ! call failed
+        write(*, '(A)', advance='no') '  Allocating particles into mpi processes ... '
+        call load_particles_globally(ierr)
+        if (ierr .eq. 0) then
+            call successful
+        else
+            call failed
+        end if
     end subroutine particles_initialize
 
 
