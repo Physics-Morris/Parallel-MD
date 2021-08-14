@@ -19,9 +19,15 @@ module helper
     integer, parameter :: term_reset_attributes = 12
     integer, parameter :: term_max = 12
 
-    namelist / basics_block / sim_dimension, x_min, x_max, y_min, y_max, z_min, z_max
-    namelist / particles_block / total_particles, particle_mass, particle_charge, particle_distribution
-    namelist / output_block / number_snapshots
+    namelist / basics_block / &
+    sim_dimension, x_min, x_max, y_min, y_max, z_min, z_max
+
+    namelist / particles_block / &
+    total_particles, particle_mass, particle_charge, particle_distribution, &
+    velocity_distribution
+
+    namelist / output_block / &
+    number_snapshots
 
     contains
 
@@ -32,6 +38,7 @@ module helper
             logical                     :: lexist
             integer                     :: ierr
 
+            !> inquire input file
             call print_empty_line(1)
             call set_term_color(term_default_colour)
             write(*, '(A)', advance='no') '  Inquire input file ... '
@@ -48,6 +55,7 @@ module helper
                 stop
             end if
 
+            !> read input file
             write(*, '(A, A, A)', advance='no') '  Reading input file (', trim(loc), ') ... '
             call sleep(1)
             open(10, file=trim(loc), status='old', action='read', iostat=ierr)
@@ -71,23 +79,24 @@ module helper
 
         subroutine print_simulation_parameter(status)
             implicit none
-            character(len=*)            :: status
+            character(len=*)             :: status
             if (status == 'full') then
                 call print_empty_line(2)
                 write(*, *) ' -----------------------------------------------'
                 call set_term_color(term_default_colour)
-                write(*, '(A, I19)')     '  Simulation dimension:       ', sim_dimension
-                write(*, '(A, ES19.2)')  '  x_min of the system:        ', x_min
-                write(*, '(A, ES19.2)')  '  x_max of the system:        ', x_max
-                write(*, '(A, ES19.2)')  '  y_min of the system:        ', y_min
-                write(*, '(A, ES19.2)')  '  y_max of the system:        ', y_max
-                write(*, '(A, ES19.2)')  '  z_min of the system:        ', z_min
-                write(*, '(A, ES19.2)')  '  z_max of the system:        ', z_max
-                write(*, '(A, I19)')     '  Total number of particles:  ', total_particles
-                write(*, '(A, ES19.2)')  '  Particle mass:              ', particle_mass
-                write(*, '(A, ES19.2)')  '  Particle charge:            ', particle_charge
-                write(*, '(A, A19)')     '  Particle distribution:      ', particle_distribution
-                write(*, '(A, I19)')     '  Number of output snapshots: ', number_snapshots
+                write(*, '(A30, I19)')     '  Simulation dimension:       ', sim_dimension
+                write(*, '(A30, ES19.2)')  '  x_min of the system:        ', x_min
+                write(*, '(A30, ES19.2)')  '  x_max of the system:        ', x_max
+                write(*, '(A30, ES19.2)')  '  y_min of the system:        ', y_min
+                write(*, '(A30, ES19.2)')  '  y_max of the system:        ', y_max
+                write(*, '(A30, ES19.2)')  '  z_min of the system:        ', z_min
+                write(*, '(A30, ES19.2)')  '  z_max of the system:        ', z_max
+                write(*, '(A30, I19)')     '  Total number of particles:  ', total_particles
+                write(*, '(A30, ES19.2)')  '  Particle mass:              ', particle_mass
+                write(*, '(A30, ES19.2)')  '  Particle charge:            ', particle_charge
+                write(*, '(A30, A)')       '  Particle distribution:      ', particle_distribution
+                write(*, '(A30, A)')       '  Velocity distribution:      ', velocity_distribution
+                write(*, '(A30, I19)')     '  Number of output snapshots: ', number_snapshots
                 call set_term_color(term_default_colour)
                 write(*, *) ' -----------------------------------------------'
                 call print_empty_line(2)
@@ -100,10 +109,11 @@ module helper
             character(len=32)           :: arg
             integer                     :: i, ierr
 
+            !> must specify input file
             if (command_argument_count() .eq. 0) then
                 CALL set_term_color(3)
                 call print_empty_line(1)
-                write(*, *) ' Need to sepcify input file'
+                write(*, *) ' Need to specify input file'
                 call print_empty_line(1)
                 CALL set_term_color(12)
                 call print_help()
@@ -293,6 +303,17 @@ module helper
             write(*, *) 'Failed'
             call set_term_color(term_default_colour)
         end subroutine failed
+
+
+        subroutine respond_to_ierr(ierr)
+            implicit none
+            integer, intent(in) :: ierr
+            if (ierr == 0) then
+                call successful
+            else
+                call failed
+            end if
+        end subroutine respond_to_ierr
 
 
 end module helper

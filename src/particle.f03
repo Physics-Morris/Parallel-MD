@@ -1,6 +1,7 @@
 module particle
     use constants
     use shared_data
+    use math
     implicit none
 
     !> derived particle type
@@ -22,6 +23,7 @@ module particle
     end type particle_type
 
 
+    !> the list that store global partarticle
     type(particle_type), dimension(:), allocatable :: global_part_list
 
 
@@ -99,11 +101,37 @@ module particle
         !> first allocate global particle list
         allocate(global_part_list(total_particles), stat=ierr)
 
+        !> initialize all particles
+        do i = 1, total_particles
+            call global_part_list(i) % initialize
+            !> asign id
+            global_part_list(i) % id = i
+        end do
+
         !> first load particle position distribution accroding to
         !> density function
-        do i = 1, total_particles
+        if (particle_distribution == 'uniform_in_domain') then
+            do i = 1, total_particles
+                global_part_list(i) % pos_x = uniform_distribution(x_min, x_max)
+                global_part_list(i) % pos_y = uniform_distribution(y_min, y_max)
+                global_part_list(i) % pos_z = uniform_distribution(z_min, z_max)
+            end do
 
-        end do
+        else if (particle_distribution == 'custom') then
+            !>
+            ! use custom fucntion locate in user_custom directory
+            ! (add in the future)
+            !>
+        end if
+
+        !> load particle velocity distrituion
+        if (velocity_distribution == 'cold_xyz') then
+            do i = 1, total_particles
+                global_part_list(i) % vel_x = 0.d0
+                global_part_list(i) % vel_y = 0.d0
+                global_part_list(i) % vel_z = 0.d0
+            end do
+        end if
     end subroutine load_particles_globally
 
 

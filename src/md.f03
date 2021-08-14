@@ -24,5 +24,7 @@ program MD
             stop
         end if
     end if
+
+    !> finishing mpi job
     call mpi_finish
 end program MD

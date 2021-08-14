@@ -41,16 +41,25 @@ module mpi_routines
         implicit none
         integer         :: my_id, ierr
 
+        !> finishing mpi
         call mpi_comm_rank(mpi_comm_world, my_id, ierr)
+
         if (my_id == master_id) then
-            call set_term_color(3)
+            !> unload global particle
+            call print_empty_line(1)
+            write(*, '(A)', advance='no') '  Unloading gloabl particles ... '
+            call unload_particles_globally(ierr)
+            call respond_to_ierr(ierr)
+        end if
+
+        call mpi_finalize(ierr)
+        if ((my_id == master_id).and.(ierr == 0)) then
             call print_empty_line(1)
             write(*, '(A)', advance='no') '  Finishing MPI routine ... '
-            call successful
-            call set_term_color(12)
+            call respond_to_ierr(ierr)
             call print_empty_line(1)
         end if
-        call mpi_finalize(ierr)
+
     end subroutine mpi_finish
 
 
@@ -59,14 +68,25 @@ module mpi_routines
         integer         :: numprocs, ierr
 
         call mpi_comm_size(mpi_comm_world, numprocs, ierr)
-        write(*, '(A)', advance='no') '  Allocating particles into mpi processes ... '
+
+        !> initialize particles distribution
         call load_particles_globally(ierr)
-        if (ierr .eq. 0) then
-            call successful
-        else
-            call failed
-        end if
+        write(*, '(A)', advance='no') '  Initialize particles distribution ... '
+        call respond_to_ierr(ierr)
+
+        !> allocate particles into mpi processes
+        write(*, '(A)', advance='no') '  Allocating particles into mpi processes ... '
+        call allocate_particles_mpi(ierr)
+        call respond_to_ierr(ierr)
     end subroutine particles_initialize
+    
+
+    !> allocate particles into mpi processes
+    subroutine allocate_particles_mpi(ierr)
+        implicit none
+        integer, intent(inout) :: ierr
+        ierr = 0
+    end subroutine allocate_particles_mpi
 
 
 end module mpi_routines

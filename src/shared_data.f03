@@ -13,6 +13,7 @@ module shared_data
     integer                     :: total_particles
     double precision            :: particle_mass, particle_charge
     character(len=60)           :: particle_distribution
+    character(len=60)           :: velocity_distribution
 
     integer                     :: number_snapshots
 

@@ -13,6 +13,7 @@ total_particles = 100
 particle_mass = 1
 particle_charge = 1
 particle_distribution = 'uniform_in_domain'
+velocity_distribution = 'cold_xyz'
 /
 
 &output_block
