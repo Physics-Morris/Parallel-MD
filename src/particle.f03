@@ -7,6 +7,9 @@ module particle
     !> derived particle type
     type, public :: particle_type
         integer          :: id
+        integer          :: global_cell_index_x
+        integer          :: global_cell_index_y
+        integer          :: global_cell_index_z
         double precision :: mass, charge
         double precision :: pos_x, pos_y, pos_z
         double precision :: vel_x, vel_y, vel_z
@@ -81,6 +84,9 @@ module particle
         implicit none
         class(particle_type), intent(inout) :: this
         this % id = 0
+        this % global_cell_index_x = 0
+        this % global_cell_index_y = 0
+        this % global_cell_index_z = 0
         this % mass = 0.d0
         this % charge = 0.d0
         this % pos_x = 0.d0
@@ -143,6 +149,10 @@ module particle
         !> first allocate global particle list
         deallocate(global_part_list, stat=ierr)
     end subroutine unload_particles_globally
+
+
+    !> map particle in global cell
+
 
 
 end module particle

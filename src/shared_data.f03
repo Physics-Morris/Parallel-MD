@@ -18,6 +18,6 @@ module shared_data
     integer                     :: number_snapshots
 
     !> mpi related shared_data
-    integer                     :: my_id, ierr
+    integer                     :: my_id, ierr, numprocs
 
 end module shared_data

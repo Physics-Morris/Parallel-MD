@@ -19,13 +19,13 @@ module mpi_routines
         call mpi_comm_rank(mpi_comm_world, my_id, ierr)
 
         !> number of cpus must be a perfect square
-        sq_numprocs = int(dsqrt(dble(numprocs)))
-        if ( abs(numprocs - sq_numprocs**2) .gt. 0.1) then
+        sq_numprocs = int(dble(numprocs)**(1.d0/3.d0))
+        if ( abs(numprocs - sq_numprocs**3) .gt. 1.d0) then
             if (my_id == master_id) then
                 CALL set_term_color(3)
                 call print_empty_line(1)
-                write(*, *)' The number of cores must be a perfect square', &
-                           ' (e.g. 1, 4, 9, 16, etc...)'
+                write(*, *)' The number of cores must be a perfect cube', &
+                           ' (e.g. 1, 8, 27, 64, etc...)'
                 CALL set_term_color(12)
                 call print_empty_line(1)
                 write(*, *) ' Finishing the program ... '
@@ -47,16 +47,19 @@ module mpi_routines
         if (my_id == master_id) then
             !> unload global particle
             call print_empty_line(1)
-            write(*, '(A)', advance='no') '  Unloading gloabl particles ... '
+            write(*, '(A)', advance='no') '  Unloading global particles ... '
             call unload_particles_globally(ierr)
             call respond_to_ierr(ierr)
         end if
 
         call mpi_finalize(ierr)
         if ((my_id == master_id).and.(ierr == 0)) then
-            call print_empty_line(1)
             write(*, '(A)', advance='no') '  Finishing MPI routine ... '
-            call respond_to_ierr(ierr)
+            if (ierr == 0) then
+                call successful
+            else
+                call failed
+            end if
             call print_empty_line(1)
         end if
 
@@ -87,6 +90,30 @@ module mpi_routines
         integer, intent(inout) :: ierr
         ierr = 0
     end subroutine allocate_particles_mpi
+
+
+    !> create communicator 
+    subroutine create_cartesian_topology(ierr, numprocs)
+        implicit none
+        integer, intent(out) :: ierr
+        integer, intent(in)  :: numprocs
+        integer :: old_comm, new_comm, ndims, reorder
+        integer :: dim_size(3)
+        logical :: periods(0:2)
+
+        !> create cartesian topology from mpi_comm_world
+        old_comm = MPI_COMM_WORLD
+        ndims = 3
+        dim_size(1) = int(numprocs**(1.d0/3.d0))
+        dim_size(2) = int(numprocs**(1.d0/3.d0))
+        dim_size(3) = int(numprocs**(1.d0/3.d0))
+        periods(0) = .false.
+        periods(1) = .false.
+        periods(2) = .false.
+        reorder = 1
+        call MPI_CART_create(old_comm, ndims, dim_size, periods, &
+                             reorder, new_comm, ierr)
+    end subroutine create_cartesian_topology
 
 
 end module mpi_routines

@@ -1,6 +1,7 @@
 module helper
     use shared_data
     use mpi
+    use constants
     implicit none
 
     character(len=5), dimension(12) :: vt100_control = (/'[39m','[30m','[31m', &
@@ -46,6 +47,7 @@ module helper
             if (lexist) then
                 call successful
                 call set_term_color(term_default_colour)
+                call print_empty_line(1)
             else
                 call failed
                 call set_term_color(term_default_colour)
@@ -308,12 +310,27 @@ module helper
         subroutine respond_to_ierr(ierr)
             implicit none
             integer, intent(in) :: ierr
-            if (ierr == 0) then
-                call successful
-            else
-                call failed
+            call sleep(1)
+            call mpi_comm_rank(mpi_comm_world, my_id, ierr)
+            if (my_id .eq. master_id) then
+                if (ierr == 0) then
+                    call successful
+                else
+                    call failed
+                end if
+                call print_empty_line(1)
             end if
         end subroutine respond_to_ierr
+
+
+        subroutine print_execute_task_name(name)
+            implicit none
+            character(len=*) :: name
+            call mpi_comm_rank(mpi_comm_world, my_id, ierr)
+            if (my_id .eq. master_id) then
+                write(*, '(A)', advance='no') name
+            end if
+        end subroutine print_execute_task_name
 
 
 end module helper
