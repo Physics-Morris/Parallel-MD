@@ -28,13 +28,13 @@ program MD
 
     !> create topology
     call print_execute_task_name('  Using Cartesian topology ... ')
-    call create_cartesian_topology(ierr, numprocs)
+    call create_cartesian_topology(ierr, numprocs, cart_comm_3d)
     call respond_to_ierr(ierr)
 
 
     !> allocate particles into mpi processes
     call print_execute_task_name('  Allocating particles into mpi processes ... ')
-    call allocate_particles_mpi(ierr)
+    call allocate_particles_mpi(ierr, cart_comm_3d)
     call respond_to_ierr(ierr)
 
 
