@@ -4,6 +4,7 @@ module shared_data
     !> program control related shared data
     character(len=*), parameter :: VERSION = '1.0'
     logical                     :: green_light
+    double precision            :: sim_start_time, sim_end_time
 
     !> simulation domain related shared data
     integer                     :: sim_dimension

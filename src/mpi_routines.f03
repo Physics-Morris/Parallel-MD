@@ -19,6 +19,10 @@ module mpi_routines
         call mpi_comm_size(mpi_comm_world, numprocs, ierr)
         call mpi_comm_rank(mpi_comm_world, my_id, ierr)
 
+        if (my_id == master_id) then
+            sim_start_time = mpi_wtime()
+        end if
+
         !> number of cpus must be a perfect square
         sq_numprocs = int(dble(numprocs)**(1.d0/3.d0))
         if ( abs(numprocs - sq_numprocs**3) .gt. .1d0) then
@@ -34,6 +38,7 @@ module mpi_routines
     subroutine mpi_finish
         implicit none
         integer         :: my_id, ierr
+        integer         :: sim_day, sim_hr, sim_min, sim_sec
 
         !> finishing mpi
         call mpi_comm_rank(mpi_comm_world, my_id, ierr)
@@ -54,6 +59,7 @@ module mpi_routines
         call print_task_time(task_start_time)
         call respond_to_ierr(ierr)
 
+        sim_end_time = mpi_wtime()
         call mpi_finalize(ierr)
         if ((my_id == master_id).and.(ierr == 0)) then
             write(*, '(A)', advance='no') '  Finishing MPI routine ... '
@@ -62,6 +68,11 @@ module mpi_routines
             else
                 call failed
             end if
+            call print_empty_line(1)
+            sim_sec = int(sim_end_time-sim_start_time)
+            call sec_to_day_hour_min(sim_day, sim_hr, sim_min, sim_sec)
+            write(*, '(A, I0.2, A, I0.2, A, I0.2, A, I2, A5)') &
+            '  Total simulation time: ', sim_hr, ':', sim_min, ':', sim_sec, '   (', sim_day, ' day)'
             call print_empty_line(1)
         end if
 

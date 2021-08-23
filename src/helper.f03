@@ -341,11 +341,21 @@ module helper
             call mpi_comm_rank(mpi_comm_world, my_id, ierr)
             if (my_id .eq. master_id) then
                 task_end_time = mpi_wtime()
-                call set_term_color(term_dim)
+                call set_term_color(term_yellow)
                 write(*, '(A, ES7.1, A)', advance='no') '(', task_end_time-task_start_time, ' sec)'
-                call set_term_color(term_reset_attributes)
-                call set_term_color(term_bold)
+                call set_term_color(term_default_colour)
             end if
         end subroutine print_task_time
+        
+
+        subroutine sec_to_day_hour_min(day, hour, min, sec)
+            implicit none
+            integer, intent(out)   :: day, hour, min
+            integer, intent(inout) :: sec
+            day  = int(floor(dble(sec) / dble(86400)))
+            hour = int(floor(dble(sec) / dble(3600)))
+            min  = int((dble(sec) / dble(3600) - hour) * 60)
+            sec  = int((((dble(sec) / dble(3600) - hour) * 60) - min) * 60)
+        end subroutine
 
 end module helper
