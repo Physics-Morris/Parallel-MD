@@ -59,7 +59,6 @@ module helper
 
             !> read input file
             write(*, '(A, A, A)', advance='no') '  Reading input file (', trim(loc), ') ... '
-            call sleep(1)
             open(10, file=trim(loc), status='old', action='read', iostat=ierr)
             if (ierr .eq. 0) then
                 read(10, nml=basics_block)
@@ -72,7 +71,6 @@ module helper
                 write(*, '(A, I5)') '  error message number: ', ierr
                 stop
             end if
-            call sleep(1)
             call print_simulation_parameter('full')
             call sleep(1)
             
@@ -201,34 +199,34 @@ module helper
         
         subroutine MD_logo
             implicit none
-            call sleep(1)
+            integer :: i
             call print_empty_line(1)
             CALL set_term_color(term_green)
-            write(*, *) ' All greens, ready to go'
-            call print_empty_line(1)
+            write(*, '(A)', advance='no') '  All greens, ready to go '
+            do i = 1, 5
+                write(*, '(A)', advance='no') '.'
+                call sleep(1)
+            end do
             CALL set_term_color(term_default_colour)
-            write(*, *) ' Starting program in 3 sec ... '
-            call sleep(3)
+            call print_empty_line(1)
             call set_term_color(term_bold)
             call set_term_color(term_yellow)
             call print_empty_line(4)
             call set_term_color(3)
             write(*,'(A)') '            ###     ###     ######## '
-            call set_term_color(1)
+            call set_term_color(5)
             write(*,'(A)') '           ####   ####     ######### '
             call set_term_color(2)
-            call set_term_color(term_cyan)
-            call set_term_color(term_yellow)
             write(*,'(A)') '          -----------     --      -- '
             call set_term_color(4)
             write(*,'(A)') '         ### ### ###     ##       ## '
-            call set_term_color(5)
-            write(*,'(A)') '        ###     ###     ##       ##  '
             call set_term_color(6)
+            write(*,'(A)') '        ###     ###     ##       ##  '
+            call set_term_color(8)
             write(*,'(A)') '       ###     ###     ##       ##   '
             call set_term_color(7)
             write(*,'(A)') '      ###     ###     ##########     '
-            call set_term_color(8)
+            call set_term_color(1)
             write(*,'(A)') '     ###     ###     #########       '
             call print_empty_line(1)
             call set_term_color(12)
@@ -237,12 +235,9 @@ module helper
 
         subroutine MICPIC_logo
             implicit none
-            call sleep(1)
             call print_empty_line(1)
             CALL set_term_color(term_green)
-            write(*, *) ' All greens, ready to go'
-            call print_empty_line(1)
-            write(*, *) ' Starting program in 3 sec ... '
+            write(*, '(A)') ' All greens, ready to go'
             CALL set_term_color(12)
             call sleep(3)
             CALL set_term_color(term_bold)
@@ -283,7 +278,7 @@ module helper
         subroutine set_term_color(controlcode)
             implicit none
             integer, intent(in) :: controlcode
-            write(*,'(a)',advance='no') achar(27) // trim(vt100_control(controlcode))
+            write(*, '(a)', advance='no') achar(27) // trim(vt100_control(controlcode))
         end subroutine set_term_color
 
 
@@ -310,8 +305,8 @@ module helper
         subroutine respond_to_ierr(ierr)
             implicit none
             integer, intent(in) :: ierr
-            call sleep(1)
             call mpi_comm_rank(mpi_comm_world, my_id, ierr)
+            call sleep(1)
             if (my_id .eq. master_id) then
                 if (ierr == 0) then
                     call successful
@@ -328,6 +323,7 @@ module helper
             character(len=*) :: name
             call mpi_comm_rank(mpi_comm_world, my_id, ierr)
             if (my_id .eq. master_id) then
+                call set_term_color(term_default_colour)
                 write(*, '(A)', advance='no') name
             end if
         end subroutine print_execute_task_name

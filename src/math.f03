@@ -9,17 +9,17 @@ module math
         function uniform_distribution(vmin, vmax)
             implicit none
             double precision :: vmin, vmax, uniform_distribution
-            double precision :: a, vc
+            double precision :: a, width, vc
             if (vmax .le. vmin) then
                 write(*, *) ' error when calling uniform distribution function'
                 write(*, *) ' vmax must less than vmin'
                 stop
             end if
             call random_number(a)
-            vc = (vmax - vmin) / 2.d0 + vmin
-            a = a - 0.5d0 + vc
-            a = a * 2.d0
-            uniform_distribution = a * (vmax - vmin) / 2.d0
+            width = vmax - vmin
+            vc = (vmax - vmin) / 2.d0
+            a = (a - 0.5d0) * width
+            uniform_distribution = a + vc
         end function uniform_distribution
 
 

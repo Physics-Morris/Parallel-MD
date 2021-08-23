@@ -5,6 +5,7 @@ program MD
     use mpi
     use shared_data
     use particle
+    use error_handle
     implicit none
     
     green_light = .False.
@@ -26,28 +27,40 @@ program MD
     end if
 
 
-    !> create topology
-    call print_execute_task_name('  Using Cartesian topology ... ')
-    call create_cartesian_topology(ierr, numprocs, cart_comm_3d)
+    !> brocasting input file shared variables
+    call print_execute_task_name('  Brocasting input file variables ... ')
+    call brocasting_input_file(ierr)
     call respond_to_ierr(ierr)
 
+
+    !> create topology
+    call print_execute_task_name('  Using Cartesian topology ... ')
+    call create_cartesian_topology(ierr, numprocs, cart_comm_3d, numprocs_x, numprocs_y, numprocs_z)
+    call respond_to_ierr(ierr)
+
+    !> create particle struc for mpi send recv
+    call print_execute_task_name('  Submitting particle structure ... ')
+    call create_mpi_particle_struc(particle_struc, ierr)
+    call respond_to_ierr(ierr)
 
     !> allocate particles into mpi processes
     call print_execute_task_name('  Allocating particles into mpi processes ... ')
-    call allocate_particles_mpi(ierr, cart_comm_3d)
+    call allocate_particles_mpi(ierr, cart_comm_3d, numprocs_x, numprocs_y, numprocs_z, local_particles)
     call respond_to_ierr(ierr)
 
 
+    !> print welcome message and wait for all processor to join
     if (my_id == master_id) then
         if (green_light) then
             !> print welcome message and start the program
             call welcome
         else
-            write(*, *) ' Something went wrong when initializing the program...'
-            stop
+            call error_message(err_num=1)
         end if
     end if
+    call mpi_barrier(cart_comm_3d, ierr)
 
-    !> finishing mpi job
+
+    !> finishing
     call mpi_finish
 end program MD
