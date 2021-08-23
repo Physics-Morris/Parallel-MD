@@ -26,8 +26,9 @@ module particle
     end type particle_type
 
 
-    !> the list that store global partarticle
+    !> the list that store global partarticle and local ones
     type(particle_type), dimension(:), allocatable :: global_part_list
+    type(particle_type), dimension(:), allocatable :: local_part_list
 
 
     contains
@@ -103,9 +104,19 @@ module particle
         implicit none
         integer, intent(inout) :: ierr
         integer                :: i
+        integer, allocatable   :: seed(:)
+        integer                :: n, clock, j
         
         !> first allocate global particle list
         allocate(global_part_list(total_particles), stat=ierr)
+
+        !> initialize state of PRNG
+        call random_seed(size=n)
+        allocate(seed(n))
+        call system_clock(count=clock)
+        seed = clock + 37 * (/ (j-1, j=1, n) /)
+        call random_seed(put=seed)
+        deallocate(seed)
 
         !> initialize all particles
         do i = 1, total_particles
@@ -141,17 +152,40 @@ module particle
     end subroutine load_particles_globally
 
 
-    !> load particle into simulation space globally
+    !> unload particle globally
     subroutine unload_particles_globally(ierr)
         implicit none
         integer, intent(inout) :: ierr
         
-        !> first allocate global particle list
         deallocate(global_part_list, stat=ierr)
     end subroutine unload_particles_globally
 
 
+    !> unload particle locally
+    subroutine unload_particles_locally(ierr)
+        implicit none
+        integer, intent(inout) :: ierr
+        
+        deallocate(local_part_list, stat=ierr)
+    end subroutine unload_particles_locally
+
+
     !> map particle in global cell
+    function map_particle_to_global_cell(pos_x, pos_y, pos_z)
+        implicit none
+        integer, dimension(3)        :: map_particle_to_global_cell
+        double precision, intent(in) :: pos_x, pos_y, pos_z
+        double precision             :: wx, wy, wz
+
+        wx = (x_max - x_min) / dble(numprocs_x)
+        wy = (y_max - y_min) / dble(numprocs_y)
+        wz = (z_max - z_min) / dble(numprocs_z)
+
+        map_particle_to_global_cell(1) = floor((pos_x - x_min) / wx) + 1
+        map_particle_to_global_cell(2) = floor((pos_y - y_min) / wy) + 1
+        map_particle_to_global_cell(3) = floor((pos_z - z_min) / wz) + 1
+
+    end function map_particle_to_global_cell
 
 
 
