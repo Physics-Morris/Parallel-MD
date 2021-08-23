@@ -42,13 +42,15 @@ module helper
             !> inquire input file
             call print_empty_line(1)
             call set_term_color(term_default_colour)
-            write(*, '(A)', advance='no') '  Inquire input file ... '
+            call print_execute_task_name('  Inquire input file ... ', task_start_time)
             inquire (file=trim(loc), exist=lexist)
             if (lexist) then
+                call print_task_time(task_start_time)
                 call successful
                 call set_term_color(term_default_colour)
                 call print_empty_line(1)
             else
+                call print_task_time(task_start_time)
                 call failed
                 call set_term_color(term_default_colour)
                 call print_empty_line(1)
@@ -58,21 +60,22 @@ module helper
             end if
 
             !> read input file
-            write(*, '(A, A, A)', advance='no') '  Reading input file (', trim(loc), ') ... '
-            call sleep(1)
+            write(*, '(A, A, A)', advance='no') '  Reading input file (', trim(loc)
+            call print_execute_task_name(') ... ', task_start_time)
             open(10, file=trim(loc), status='old', action='read', iostat=ierr)
             if (ierr .eq. 0) then
                 read(10, nml=basics_block)
                 read(10, nml=particles_block)
                 read(10, nml=output_block)
+                call print_task_time(task_start_time)
                 call successful
                 close(10)
             else
+                call print_task_time(task_start_time)
                 call failed
                 write(*, '(A, I5)') '  error message number: ', ierr
                 stop
             end if
-            call sleep(1)
             call print_simulation_parameter('full')
             call sleep(1)
             
@@ -201,34 +204,34 @@ module helper
         
         subroutine MD_logo
             implicit none
-            call sleep(1)
+            integer :: i
             call print_empty_line(1)
             CALL set_term_color(term_green)
-            write(*, *) ' All greens, ready to go'
-            call print_empty_line(1)
+            write(*, '(A)', advance='no') '  All greens, ready to go '
+            do i = 1, 5
+                write(*, '(A)', advance='no') '.'
+                call sleep(1)
+            end do
             CALL set_term_color(term_default_colour)
-            write(*, *) ' Starting program in 3 sec ... '
-            call sleep(3)
+            call print_empty_line(1)
             call set_term_color(term_bold)
             call set_term_color(term_yellow)
             call print_empty_line(4)
             call set_term_color(3)
             write(*,'(A)') '            ###     ###     ######## '
-            call set_term_color(1)
+            call set_term_color(5)
             write(*,'(A)') '           ####   ####     ######### '
             call set_term_color(2)
-            call set_term_color(term_cyan)
-            call set_term_color(term_yellow)
             write(*,'(A)') '          -----------     --      -- '
             call set_term_color(4)
             write(*,'(A)') '         ### ### ###     ##       ## '
-            call set_term_color(5)
-            write(*,'(A)') '        ###     ###     ##       ##  '
             call set_term_color(6)
+            write(*,'(A)') '        ###     ###     ##       ##  '
+            call set_term_color(8)
             write(*,'(A)') '       ###     ###     ##       ##   '
             call set_term_color(7)
             write(*,'(A)') '      ###     ###     ##########     '
-            call set_term_color(8)
+            call set_term_color(1)
             write(*,'(A)') '     ###     ###     #########       '
             call print_empty_line(1)
             call set_term_color(12)
@@ -237,12 +240,9 @@ module helper
 
         subroutine MICPIC_logo
             implicit none
-            call sleep(1)
             call print_empty_line(1)
             CALL set_term_color(term_green)
-            write(*, *) ' All greens, ready to go'
-            call print_empty_line(1)
-            write(*, *) ' Starting program in 3 sec ... '
+            write(*, '(A)') ' All greens, ready to go'
             CALL set_term_color(12)
             call sleep(3)
             CALL set_term_color(term_bold)
@@ -283,7 +283,7 @@ module helper
         subroutine set_term_color(controlcode)
             implicit none
             integer, intent(in) :: controlcode
-            write(*,'(a)',advance='no') achar(27) // trim(vt100_control(controlcode))
+            write(*, '(a)', advance='no') achar(27) // trim(vt100_control(controlcode))
         end subroutine set_term_color
 
 
@@ -310,7 +310,6 @@ module helper
         subroutine respond_to_ierr(ierr)
             implicit none
             integer, intent(in) :: ierr
-            call sleep(1)
             call mpi_comm_rank(mpi_comm_world, my_id, ierr)
             if (my_id .eq. master_id) then
                 if (ierr == 0) then
@@ -323,14 +322,40 @@ module helper
         end subroutine respond_to_ierr
 
 
-        subroutine print_execute_task_name(name)
+        subroutine print_execute_task_name(name, task_start_time)
             implicit none
             character(len=*) :: name
+            double precision :: task_start_time
             call mpi_comm_rank(mpi_comm_world, my_id, ierr)
             if (my_id .eq. master_id) then
+                task_start_time = mpi_wtime()
+                call set_term_color(term_default_colour)
                 write(*, '(A)', advance='no') name
             end if
         end subroutine print_execute_task_name
+        
 
+        subroutine print_task_time(task_start_time)
+            implicit none
+            double precision :: task_start_time, task_end_time
+            call mpi_comm_rank(mpi_comm_world, my_id, ierr)
+            if (my_id .eq. master_id) then
+                task_end_time = mpi_wtime()
+                call set_term_color(term_yellow)
+                write(*, '(A, ES7.1, A)', advance='no') '(', task_end_time-task_start_time, ' sec)'
+                call set_term_color(term_default_colour)
+            end if
+        end subroutine print_task_time
+        
+
+        subroutine sec_to_day_hour_min(day, hour, min, sec)
+            implicit none
+            integer, intent(out)   :: day, hour, min
+            integer, intent(inout) :: sec
+            day  = int(floor(dble(sec) / dble(86400)))
+            hour = int(floor(dble(sec) / dble(3600)))
+            min  = int((dble(sec) / dble(3600) - hour) * 60)
+            sec  = int((((dble(sec) / dble(3600) - hour) * 60) - min) * 60)
+        end subroutine
 
 end module helper
