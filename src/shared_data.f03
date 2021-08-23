@@ -23,6 +23,7 @@ module shared_data
     integer                     :: number_snapshots
 
     !> mpi related shared_data
+    double precision            :: task_start_time, task_end_time
     integer                     :: my_id, ierr, numprocs, cart_comm_3d
     integer                     :: particle_struc
     !> number of processor in each direction

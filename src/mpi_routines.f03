@@ -41,15 +41,17 @@ module mpi_routines
         if (my_id == master_id) then
             !> unload global particle
             call print_empty_line(1)
-            write(*, '(A)', advance='no') '  Unloading global particles ... '
+            call print_execute_task_name('  Unloading global particles ... ', task_start_time)
             call unload_particles_globally(ierr)
+            call print_task_time(task_start_time)
             call respond_to_ierr(ierr)
         end if
 
         if (my_id == master_id) then
-            write(*, '(A)', advance='no') '  Unloading local particles ... '
+            call print_execute_task_name('  Unloading local particles ... ', task_start_time)
         end if
         call unload_particles_locally(ierr)
+        call print_task_time(task_start_time)
         call respond_to_ierr(ierr)
 
         call mpi_finalize(ierr)

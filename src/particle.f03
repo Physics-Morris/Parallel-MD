@@ -104,9 +104,19 @@ module particle
         implicit none
         integer, intent(inout) :: ierr
         integer                :: i
+        integer, allocatable   :: seed(:)
+        integer                :: n, clock, j
         
         !> first allocate global particle list
         allocate(global_part_list(total_particles), stat=ierr)
+
+        !> initialize state of PRNG
+        call random_seed(size=n)
+        allocate(seed(n))
+        call system_clock(count=clock)
+        seed = clock + 37 * (/ (j-1, j=1, n) /)
+        call random_seed(put=seed)
+        deallocate(seed)
 
         !> initialize all particles
         do i = 1, total_particles

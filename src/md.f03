@@ -21,31 +21,36 @@ program MD
         !> get command line argument and handle input file
         call get_cmd_arg
         !> set up particles globally, initialize particles distribution
-        call print_execute_task_name('  Initialize particles distribution ... ')
+        call print_execute_task_name('  Initialize particles distribution ... ', task_start_time)
         call load_particles_globally(ierr)
+        call print_task_time(task_start_time)
         call respond_to_ierr(ierr)
     end if
 
 
     !> brocasting input file shared variables
-    call print_execute_task_name('  Brocasting input file variables ... ')
+    call print_execute_task_name('  Brocasting input file variables ... ', task_start_time)
     call brocasting_input_file(ierr)
+    call print_task_time(task_start_time)
     call respond_to_ierr(ierr)
 
 
     !> create topology
-    call print_execute_task_name('  Using Cartesian topology ... ')
+    call print_execute_task_name('  Using Cartesian topology ... ', task_start_time)
     call create_cartesian_topology(ierr, numprocs, cart_comm_3d, numprocs_x, numprocs_y, numprocs_z)
+    call print_task_time(task_start_time)
     call respond_to_ierr(ierr)
 
     !> create particle struc for mpi send recv
-    call print_execute_task_name('  Submitting particle structure ... ')
+    call print_execute_task_name('  Submitting particle structure ... ', task_start_time)
     call create_mpi_particle_struc(particle_struc, ierr)
+    call print_task_time(task_start_time)
     call respond_to_ierr(ierr)
 
     !> allocate particles into mpi processes
-    call print_execute_task_name('  Allocating particles into mpi processes ... ')
+    call print_execute_task_name('  Allocating particles into mpi processes ... ', task_start_time)
     call allocate_particles_mpi(ierr, cart_comm_3d, numprocs_x, numprocs_y, numprocs_z, local_particles)
+    call print_task_time(task_start_time)
     call respond_to_ierr(ierr)
 
 

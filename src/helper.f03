@@ -42,13 +42,15 @@ module helper
             !> inquire input file
             call print_empty_line(1)
             call set_term_color(term_default_colour)
-            write(*, '(A)', advance='no') '  Inquire input file ... '
+            call print_execute_task_name('  Inquire input file ... ', task_start_time)
             inquire (file=trim(loc), exist=lexist)
             if (lexist) then
+                call print_task_time(task_start_time)
                 call successful
                 call set_term_color(term_default_colour)
                 call print_empty_line(1)
             else
+                call print_task_time(task_start_time)
                 call failed
                 call set_term_color(term_default_colour)
                 call print_empty_line(1)
@@ -58,15 +60,18 @@ module helper
             end if
 
             !> read input file
-            write(*, '(A, A, A)', advance='no') '  Reading input file (', trim(loc), ') ... '
+            write(*, '(A, A, A)', advance='no') '  Reading input file (', trim(loc)
+            call print_execute_task_name(') ... ', task_start_time)
             open(10, file=trim(loc), status='old', action='read', iostat=ierr)
             if (ierr .eq. 0) then
                 read(10, nml=basics_block)
                 read(10, nml=particles_block)
                 read(10, nml=output_block)
+                call print_task_time(task_start_time)
                 call successful
                 close(10)
             else
+                call print_task_time(task_start_time)
                 call failed
                 write(*, '(A, I5)') '  error message number: ', ierr
                 stop
@@ -306,7 +311,6 @@ module helper
             implicit none
             integer, intent(in) :: ierr
             call mpi_comm_rank(mpi_comm_world, my_id, ierr)
-            call sleep(1)
             if (my_id .eq. master_id) then
                 if (ierr == 0) then
                     call successful
@@ -318,15 +322,30 @@ module helper
         end subroutine respond_to_ierr
 
 
-        subroutine print_execute_task_name(name)
+        subroutine print_execute_task_name(name, task_start_time)
             implicit none
             character(len=*) :: name
+            double precision :: task_start_time
             call mpi_comm_rank(mpi_comm_world, my_id, ierr)
             if (my_id .eq. master_id) then
+                task_start_time = mpi_wtime()
                 call set_term_color(term_default_colour)
                 write(*, '(A)', advance='no') name
             end if
         end subroutine print_execute_task_name
+        
 
+        subroutine print_task_time(task_start_time)
+            implicit none
+            double precision :: task_start_time, task_end_time
+            call mpi_comm_rank(mpi_comm_world, my_id, ierr)
+            if (my_id .eq. master_id) then
+                task_end_time = mpi_wtime()
+                call set_term_color(term_dim)
+                write(*, '(A, ES7.1, A)', advance='no') '(', task_end_time-task_start_time, ' sec)'
+                call set_term_color(term_reset_attributes)
+                call set_term_color(term_bold)
+            end if
+        end subroutine print_task_time
 
 end module helper
