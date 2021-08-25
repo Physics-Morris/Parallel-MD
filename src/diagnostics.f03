@@ -54,12 +54,14 @@ module diagnostics
 
         !> mpi related
         integer                                                :: comm, info
-        integer                                                :: mpi_size, mpi_rank
 
         !> local particle
         integer, dimension(numprocs_x, numprocs_y, numprocs_z) :: locals_part_num
         integer                                                :: global_part_num
 
+        !> first call mpi related subroutine
+        comm = cart_comm_3d
+        info = mpi_info_null
         call mpi_comm_size(cart_comm_3d, numprocs, ierr)
         call mpi_comm_rank(cart_comm_3d, my_id, ierr)
 
@@ -67,10 +69,11 @@ module diagnostics
         write(file_number, fmt) num
         filename = default_dir // trim(file_number) // '.h5'
 
+        !> get all the local particle number and global particle number
         locals_part_num = count_local_particle(ierr)
         global_part_num = count_global_particle(ierr)
 
-
     end subroutine output
+
 
 end module diagnostics
