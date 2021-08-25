@@ -2,6 +2,7 @@ module helper
     use shared_data
     use mpi
     use constants
+    use math
     implicit none
 
     character(len=5), dimension(12) :: vt100_control = (/'[39m','[30m','[31m', &

@@ -6,6 +6,7 @@ program MD
     use shared_data
     use particle
     use error_handle
+    use diagnostics
     implicit none
     
     green_light = .False.
@@ -50,6 +51,12 @@ program MD
     !> allocate particles into mpi processes
     call print_execute_task_name('  Allocating particles into mpi processes ... ', task_start_time)
     call allocate_particles_mpi(ierr, cart_comm_3d, numprocs_x, numprocs_y, numprocs_z, local_particles)
+    call print_task_time(task_start_time)
+    call respond_to_ierr(ierr)
+
+    !> initial output
+    call print_execute_task_name('  Write initial setup to H5 file ... ', task_start_time)
+    call output(step, ierr)
     call print_task_time(task_start_time)
     call respond_to_ierr(ierr)
 

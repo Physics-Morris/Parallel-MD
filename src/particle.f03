@@ -1,4 +1,5 @@
 module particle
+    use mpi
     use constants
     use shared_data
     use math
@@ -187,6 +188,49 @@ module particle
 
     end function map_particle_to_global_cell
 
+
+    !> count local particle number
+    function count_local_particle(ierr)
+        implicit none
+        integer, dimension(1:numprocs_x, 1:numprocs_y, 1:numprocs_z) :: count_local_particle
+        integer, intent(out)                                         :: ierr
+        integer                                                      :: dims=3, isperiodic
+        integer                                                      :: coords(3)
+        integer                                                      :: status(mpi_status_size)
+        integer, dimension(4)                                        :: send_data
+        integer, dimension(4)                                        :: recv_data
+        integer                                                      :: i=0
+
+        !> get cartesian coordinate of this process
+        call mpi_cart_get(cart_comm_3d, 3, dims, isperiodic, coords, ierr)
+        !> send coords and number to master
+        send_data = (/ coords(1), coords(2), coords(3), size(local_part_list) /)
+        call mpi_send(send_data, 4, mpi_integer, master_id, master_id, mpi_comm_world, ierr)
+
+        !> master recv from all process the number of particle in each process
+        call mpi_comm_size(mpi_comm_world, numprocs, ierr)
+        call mpi_comm_rank(mpi_comm_world, my_id, ierr)
+        if (my_id == master_id) then
+            do i = 0, numprocs-1
+                call mpi_recv(recv_data, 4, mpi_integer, i, master_id, mpi_comm_world, status, ierr)
+                count_local_particle(recv_data(1)+1, recv_data(2)+1, recv_data(3)+1) = recv_data(4)
+            end do
+        end if
+
+        !> master bcast local particle number to all processor
+        call mpi_bcast(count_local_particle, numprocs_x*numprocs_y*numprocs_z, mpi_int, master_id, cart_comm_3d, ierr)
+
+    end function count_local_particle
+
+
+    !> count global particle number
+    function count_global_particle(ierr)
+        implicit none
+        integer                                                      :: count_global_particle, ierr
+        integer, dimension(1:numprocs_x, 1:numprocs_y, 1:numprocs_z) :: locals_part
+        locals_part = count_local_particle(ierr)
+        count_global_particle = sum(locals_part)
+    end function count_global_particle
 
 
 end module particle

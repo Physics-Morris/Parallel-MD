@@ -14,6 +14,8 @@ module shared_data
     double precision            :: y_min_local, y_max_local
     double precision            :: z_min_local, z_max_local
 
+    integer                     :: step=0
+
     !> particle related shared data
     integer                     :: total_particles
     double precision            :: particle_mass, particle_charge
