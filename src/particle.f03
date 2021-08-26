@@ -189,7 +189,7 @@ module particle
     end function map_particle_to_global_cell
 
 
-    !> count local particle number
+    !> count local particle number and create a 3d array
     function count_local_particle(ierr)
         implicit none
         integer, dimension(1:numprocs_x, 1:numprocs_y, 1:numprocs_z) :: count_local_particle

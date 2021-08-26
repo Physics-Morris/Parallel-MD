@@ -1,4 +1,5 @@
 module shared_data
+    use mpi
     implicit none
 
     !> program control related shared data

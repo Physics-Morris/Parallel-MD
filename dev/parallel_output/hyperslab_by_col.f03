@@ -5,18 +5,24 @@
      program dataset_by_col
 
      use hdf5 ! this module contains all necessary modules 
+     use mpi
         
      implicit none
 
-     include 'mpif.h'
+     ! include 'mpif.h'
      character(len=10), parameter :: filename = "sds_col.h5"  ! file name
      character(len=13), parameter :: dsetname = "particle_info" ! dataset name
+     character(len=8), parameter :: dsetname2 = "velocity" ! dataset name
 
      integer(hid_t) :: file_id       ! file identifier 
      integer(hid_t) :: dset_id       ! dataset identifier 
      integer(hid_t) :: filespace     ! dataspace identifier in file 
      integer(hid_t) :: memspace      ! dataspace identifier in memory
      integer(hid_t) :: plist_id      ! property list identifier 
+
+     integer(hid_t) :: dset_id2       ! dataset identifier 
+     integer(hid_t) :: filespace2     ! dataspace identifier in file 
+     integer(hid_t) :: memspace2      ! dataspace identifier in memory
 
      integer(hsize_t), dimension(2) :: dimsf = (/5,8/) ! dataset dimensions.
 !     integer, dimension(7) :: dimsfi = (/5,8,0,0,0,0,0/)
@@ -38,6 +44,7 @@
      integer :: mpierror       ! mpi error flag
      integer :: comm, info
      integer :: mpi_size, mpi_rank
+
      comm = mpi_comm_world
      info = mpi_info_null
      call mpi_init(mpierror)
@@ -63,6 +70,7 @@
      ! create the data space for the  dataset. 
      !
      call h5screate_simple_f(rank, dimsf, filespace, error)
+     call h5screate_simple_f(rank, dimsf, filespace2, error)
 
      !
      ! create the dataset with default properties.
@@ -70,6 +78,9 @@
      call h5dcreate_f(file_id, dsetname, h5t_ieee_f64le, filespace, &
                       dset_id, error)
      call h5sclose_f(filespace, error)
+     call h5dcreate_f(file_id, dsetname2, h5t_ieee_f64le, filespace2, &
+                      dset_id2, error)
+     call h5sclose_f(filespace2, error)
      !
      ! each process defines dataset in memory and writes it to the hyperslab
      ! in the file. 
@@ -81,11 +92,14 @@
      ! offset(2) = mpi_rank * count(2) 
      offset(2) = offset_part(mpi_rank+1)
      call h5screate_simple_f(rank, count, memspace, error) 
+     call h5screate_simple_f(rank, count, memspace2, error) 
      ! 
      ! select hyperslab in the file.
      !
      call h5dget_space_f(dset_id, filespace, error)
      call h5sselect_hyperslab_f (filespace, h5s_select_set_f, offset, count, error)
+     call h5dget_space_f(dset_id2, filespace2, error)
+     call h5sselect_hyperslab_f (filespace2, h5s_select_set_f, offset, count, error)
      ! 
      ! initialize data buffer with trivial data.
      !
@@ -104,6 +118,8 @@
      !
      call h5dwrite_f(dset_id, h5t_native_double, data, dimsfi, error, &
                      file_space_id = filespace, mem_space_id = memspace, xfer_prp = plist_id)
+     call h5dwrite_f(dset_id2, h5t_native_double, data, dimsfi, error, &
+                     file_space_id = filespace2, mem_space_id = memspace2, xfer_prp = plist_id)
      !
      ! write the dataset independently. 
      !
@@ -119,11 +135,14 @@
      !
      call h5sclose_f(filespace, error)
      call h5sclose_f(memspace, error)
+     call h5sclose_f(filespace2, error)
+     call h5sclose_f(memspace2, error)
 
      !
      ! close the dataset and property list.
      !
      call h5dclose_f(dset_id, error)
+     call h5dclose_f(dset_id2, error)
      call h5pclose_f(plist_id, error)
 
      !

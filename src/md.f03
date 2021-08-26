@@ -7,6 +7,7 @@ program MD
     use particle
     use error_handle
     use diagnostics
+    use hdf5
     implicit none
     
     green_light = .False.
