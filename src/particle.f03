@@ -150,6 +150,11 @@ module particle
                 global_part_list(i) % vel_z = 0.d0
             end do
         end if
+
+        do i = 1, total_particles
+            global_part_list(i) % mass = particle_mass
+            global_part_list(i) % charge = particle_charge
+        end do
     end subroutine load_particles_globally
 
 

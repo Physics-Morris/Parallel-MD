@@ -233,18 +233,18 @@ module diagnostics
 
         !> initilize data
         do i = 1, count_part
-            data_id(1, i) = local_part_list(i) % id
-            data_mass(1, i) = local_part_list(i) % mass + 1
+            data_id(1, i)     = local_part_list(i) % id
+            data_mass(1, i)   = local_part_list(i) % mass
             data_charge(1, i) = local_part_list(i) % charge
-            data_vel(1, i) = local_part_list(i) % vel_x
-            data_vel(2, i) = local_part_list(i) % vel_y
-            data_vel(3, i) = local_part_list(i) % vel_z
-            data_pos(1, i) = local_part_list(i) % pos_x
-            data_pos(2, i) = local_part_list(i) % pos_y
-            data_pos(3, i) = local_part_list(i) % pos_z
-            data_index(1, i) = local_part_list(i) % global_cell_index_x
-            data_index(2, i) = local_part_list(i) % global_cell_index_y
-            data_index(3, i) = local_part_list(i) % global_cell_index_z
+            data_vel(1, i)    = local_part_list(i) % vel_x
+            data_vel(2, i)    = local_part_list(i) % vel_y
+            data_vel(3, i)    = local_part_list(i) % vel_z
+            data_pos(1, i)    = local_part_list(i) % pos_x
+            data_pos(2, i)    = local_part_list(i) % pos_y
+            data_pos(3, i)    = local_part_list(i) % pos_z
+            data_index(1, i)  = local_part_list(i) % global_cell_index_x
+            data_index(2, i)  = local_part_list(i) % global_cell_index_y
+            data_index(3, i)  = local_part_list(i) % global_cell_index_z
         end do
 
         ! !> create property list for collective dataset write
