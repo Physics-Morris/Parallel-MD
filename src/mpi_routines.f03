@@ -24,7 +24,7 @@ module mpi_routines
         end if
 
         !> number of cpus must be a perfect square
-        sq_numprocs = int(dble(numprocs)**(1.d0/3.d0))
+        sq_numprocs = nint(dble(numprocs)**(1.d0/3.d0))
         if ( abs(numprocs - sq_numprocs**3) .gt. .1d0) then
             if (my_id == master_id) then
                 call error_message(err_num=2)
@@ -150,12 +150,10 @@ module mpi_routines
         !> slaves recv number of particle
         call mpi_comm_rank(cart_comm_3d, my_id, ierr)
         call mpi_recv(local_particles, 1, mpi_integer, master_id, my_id, cart_comm_3d, status, ierr)
+        call mpi_barrier(cart_comm_3d, ierr)
 
-        if (local_particles /= 0) then
-            !> setup local part list (allocate and send from master)
-            call setup_local_part_list(local_particles, ierr)
-        end if
-
+        !> setup local part list (allocate and send from master)
+        call setup_local_part_list(local_particles, ierr)
     end subroutine allocate_particles_mpi
 
 
@@ -193,12 +191,9 @@ module mpi_routines
         end if
 
         !> receive particle
-        do 
+        do while (count_recv < local_particles)
             count_recv = count_recv + 1
             call recv_particle(count_recv, particle_struc, ierr)
-            if (count_recv == local_particles) then
-                exit
-            end if
         end do
 
     end subroutine setup_local_part_list
@@ -314,6 +309,10 @@ module mpi_routines
         numprocs_x = dim_size(1)
         numprocs_y = dim_size(2)
         numprocs_z = dim_size(3)
+        if (my_id == master_id) then
+            write(*, '(A, I1, A, I1, A, I1, A)', advance='no') &
+            '(', numprocs_x, 'x', numprocs_y, 'x', numprocs_z, ')'
+        end if
     end subroutine create_cartesian_topology
 
 
