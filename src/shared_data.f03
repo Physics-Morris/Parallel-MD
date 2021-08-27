@@ -1,4 +1,5 @@
 module shared_data
+    use mpi
     implicit none
 
     !> program control related shared data
@@ -13,6 +14,8 @@ module shared_data
     double precision            :: x_min_local, x_max_local
     double precision            :: y_min_local, y_max_local
     double precision            :: z_min_local, z_max_local
+
+    integer                     :: step=0
 
     !> particle related shared data
     integer                     :: total_particles
