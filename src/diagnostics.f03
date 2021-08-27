@@ -118,13 +118,14 @@ module diagnostics
         write(file_number, fmt) num
         filename = default_dir // trim(file_number) // '.h5'
 
-        !> get all the local particle number and global particle number
-        locals_part_num = count_local_particle(ierr)
-        global_part_num = count_global_particle(ierr)
-
         !> gather and bcast particle in each processor to all processor (allgather)
-        count_part = locals_part_num(coords(1)+1, coords(2)+1, coords(3)+1)
+        call mpi_barrier(comm, ierr)
+        count_part = local_particles
         call mpi_allgather(count_part, 1, mpi_integer, counts_part, 1, mpi_integer, mpi_comm_world, ierr)
+
+        !> get all the local particle number and global particle number
+        locals_part_num = counts_part(my_id+1)
+        global_part_num = sum(counts_part)
 
         !> calculate particle offset with different process
         part_offset = calculate_offset(counts_part, my_id)
@@ -250,7 +251,7 @@ module diagnostics
         ! !> create property list for collective dataset write
         call h5pcreate_f(h5p_dataset_xfer_f, plist_id, error) 
         call h5pset_dxpl_mpio_f(plist_id, h5fd_mpio_collective_f, error)
-     
+    
         ! !> write the dataset collectively. 
         call h5dwrite_f(dsetid_id, h5t_native_double, data_id, dim_id, error, &
                         file_space_id = filespace_id, mem_space_id = memspace_id, xfer_prp = plist_id)
