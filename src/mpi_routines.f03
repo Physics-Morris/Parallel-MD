@@ -311,7 +311,7 @@ module mpi_routines
         numprocs_z = dim_size(3)
         if (my_id == master_id) then
             write(*, '(A, I1, A, I1, A, I1, A)', advance='no') &
-            '(', numprocs_x, 'x', numprocs_y, 'x', numprocs_z, ')'
+            '[', numprocs_x, 'x', numprocs_y, 'x', numprocs_z, ']'
         end if
     end subroutine create_cartesian_topology
 

@@ -77,12 +77,12 @@ module diagnostics
         integer(hssize_t), dimension(2)                        :: offset_index
 
         !> data to write
-        double precision, allocatable                          :: data_id(:, :)
+        integer, allocatable                                   :: data_id(:, :)
         double precision, allocatable                          :: data_mass(:, :)
         double precision, allocatable                          :: data_charge(:, :)
         double precision, allocatable                          :: data_vel(:, :)
         double precision, allocatable                          :: data_pos(:, :)
-        double precision, allocatable                          :: data_index(:, :)
+        integer, allocatable                                   :: data_index(:, :)
 
         !> dataset rank 
         integer                                                :: rank_id = 2
@@ -164,12 +164,12 @@ module diagnostics
         call h5screate_simple_f(rank_index,  dim_index,  filespace_index,  error)
 
         !> create the dataset with default properties.
-        call h5dcreate_f(file_id, dsetname_id,     h5t_ieee_f64le, filespace_id,     dsetid_id,     error)
-        call h5dcreate_f(file_id, dsetname_mass,   h5t_ieee_f64le, filespace_mass,   dsetid_mass,   error)
-        call h5dcreate_f(file_id, dsetname_charge, h5t_ieee_f64le, filespace_charge, dsetid_charge, error)
-        call h5dcreate_f(file_id, dsetname_vel,    h5t_ieee_f64le, filespace_vel,    dsetid_vel,    error)
-        call h5dcreate_f(file_id, dsetname_pos,    h5t_ieee_f64le, filespace_pos,    dsetid_pos,    error)
-        call h5dcreate_f(file_id, dsetname_index,  h5t_ieee_f64le, filespace_index,  dsetid_index,  error)
+        call h5dcreate_f(file_id, dsetname_id,     h5t_native_integer, filespace_id,     dsetid_id,     error)
+        call h5dcreate_f(file_id, dsetname_mass,   h5t_ieee_f64le,     filespace_mass,   dsetid_mass,   error)
+        call h5dcreate_f(file_id, dsetname_charge, h5t_ieee_f64le,     filespace_charge, dsetid_charge, error)
+        call h5dcreate_f(file_id, dsetname_vel,    h5t_ieee_f64le,     filespace_vel,    dsetid_vel,    error)
+        call h5dcreate_f(file_id, dsetname_pos,    h5t_ieee_f64le,     filespace_pos,    dsetid_pos,    error)
+        call h5dcreate_f(file_id, dsetname_index,  h5t_native_integer, filespace_index,  dsetid_index,  error)
         call h5sclose_f(filespace_id,     error)
         call h5sclose_f(filespace_mass,   error)
         call h5sclose_f(filespace_charge, error)
@@ -253,7 +253,7 @@ module diagnostics
         call h5pset_dxpl_mpio_f(plist_id, h5fd_mpio_collective_f, error)
     
         ! !> write the dataset collectively. 
-        call h5dwrite_f(dsetid_id, h5t_native_double, data_id, dim_id, error, &
+        call h5dwrite_f(dsetid_id, h5t_native_integer, data_id, dim_id, error, &
                         file_space_id = filespace_id, mem_space_id = memspace_id, xfer_prp = plist_id)
         call h5dwrite_f(dsetid_mass, h5t_native_double, data_mass, dim_mass, error, &
                         file_space_id = filespace_mass, mem_space_id = memspace_mass, xfer_prp = plist_id)
@@ -263,7 +263,7 @@ module diagnostics
                         file_space_id = filespace_vel, mem_space_id = memspace_vel, xfer_prp = plist_id)
         call h5dwrite_f(dsetid_pos, h5t_native_double, data_pos, dim_pos, error, &
                         file_space_id = filespace_pos, mem_space_id = memspace_pos, xfer_prp = plist_id)
-        call h5dwrite_f(dsetid_index, h5t_native_double, data_index, dim_index, error, &
+        call h5dwrite_f(dsetid_index, h5t_native_integer, data_index, dim_index, error, &
                         file_space_id = filespace_index, mem_space_id = memspace_index, xfer_prp = plist_id)
 
         deallocate(data_id)
