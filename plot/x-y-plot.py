@@ -17,6 +17,8 @@ plt.rcParams['legend.fontsize'] = 13
 plt.rcParams['mathtext.fontset'] = 'stix'
 plt.rcParams['axes.linewidth'] = 1
 
+plt.style.use('dark_background')
+
 colors = cm.get_cmap('Set1', 5)
 
 fig = plt.figure()
@@ -59,4 +61,5 @@ ax.set_xlabel('$x$')
 ax.set_ylabel('$y$')
 ax.set_aspect('equal')
 plt.tight_layout()
-plt.savefig('figures/uniform_distribution_2d.png', dpi=1000)
+# plt.savefig('figures/uniform_distribution_2d_light.png', dpi=1000)
+plt.savefig('figures/uniform_distribution_2d_dark.png', dpi=1000, transparent=True)
