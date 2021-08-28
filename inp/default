@@ -9,11 +9,14 @@ z_max = 100
 /
 
 &particles_block
-total_particles = 100
+total_particles = 10000
 particle_mass = 1
 particle_charge = 1
 particle_distribution = 'uniform_in_domain'
-velocity_distribution = 'cold_xyz'
+velocity_distribution = 'maxwell_xyz'
+particle_temp_x = 1
+particle_temp_y = 1
+particle_temp_z = 1
 /
 
 &output_block

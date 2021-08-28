@@ -26,7 +26,7 @@ module helper
 
     namelist / particles_block / &
     total_particles, particle_mass, particle_charge, particle_distribution, &
-    velocity_distribution
+    velocity_distribution, particle_temp_x, particle_temp_y, particle_temp_z
 
     namelist / output_block / &
     number_snapshots
@@ -102,6 +102,9 @@ module helper
                 write(*, '(A30, ES19.2)')  '  Particle charge:            ', particle_charge
                 write(*, '(A30, A)')       '  Particle distribution:      ', particle_distribution
                 write(*, '(A30, A)')       '  Velocity distribution:      ', velocity_distribution
+                write(*, '(A30, ES19.2)')  '  Particle Temperature in x:  ', particle_temp_x
+                write(*, '(A30, ES19.2)')  '  Particle Temperature in y:  ', particle_temp_y
+                write(*, '(A30, ES19.2)')  '  Particle Temperature in z:  ', particle_temp_z
                 write(*, '(A30, I19)')     '  Number of output snapshots: ', number_snapshots
                 call set_term_color(term_default_colour)
                 write(*, *) ' -----------------------------------------------'

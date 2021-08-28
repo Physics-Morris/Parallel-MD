@@ -22,6 +22,7 @@ module shared_data
     double precision            :: particle_mass, particle_charge
     character(len=60)           :: particle_distribution
     character(len=60)           :: velocity_distribution
+    double precision            :: particle_temp_x, particle_temp_y, particle_temp_z
     integer                     :: local_particles
 
     integer                     :: number_snapshots
