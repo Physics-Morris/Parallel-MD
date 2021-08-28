@@ -5,21 +5,21 @@ module helper
     use math
     implicit none
 
-    character(len=5), dimension(12) :: vt100_control = (/'[39m','[30m','[31m', &
-    '[32m','[33m','[34m','[35m','[36m','[1m ','[2m ','[4m ','[0m '/)
-    integer, parameter :: term_default_colour = 1
-    integer, parameter :: term_black = 2
-    integer, parameter :: term_red = 3
-    integer, parameter :: term_green = 4
-    integer, parameter :: term_yellow = 5
-    integer, parameter :: term_blue = 6
-    integer, parameter :: term_magnenta = 7
-    integer, parameter :: term_cyan = 8
-    integer, parameter :: term_bold = 9
-    integer, parameter :: term_dim = 10
-    integer, parameter :: term_underline = 11
-    integer, parameter :: term_reset_attributes = 12
-    integer, parameter :: term_max = 12
+    ! character(len=5), dimension(12) :: vt100_control = (/'[39m','[30m','[31m', &
+    ! '[32m','[33m','[34m','[35m','[36m','[1m ','[2m ','[4m ','[0m '/)
+    ! integer, parameter :: term_default_colour = 1
+    ! integer, parameter :: term_black = 2
+    ! integer, parameter :: term_red = 3
+    ! integer, parameter :: term_green = 4
+    ! integer, parameter :: term_yellow = 5
+    ! integer, parameter :: term_blue = 6
+    ! integer, parameter :: term_magnenta = 7
+    ! integer, parameter :: term_cyan = 8
+    ! integer, parameter :: term_bold = 9
+    ! integer, parameter :: term_dim = 10
+    ! integer, parameter :: term_underline = 11
+    ! integer, parameter :: term_reset_attributes = 12
+    ! integer, parameter :: term_max = 12
 
     namelist / basics_block / &
     sim_dimension, x_min, x_max, y_min, y_max, z_min, z_max
