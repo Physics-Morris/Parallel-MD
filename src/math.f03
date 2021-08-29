@@ -23,6 +23,7 @@ module math
         end function uniform_distribution
 
 
+        !> create random gaussian distribution from Box-Muller transform
         function gaussian_distribution(mu, sig)
             implicit none
             double precision :: a, b, gaussian_distribution, sig, mu
@@ -31,6 +32,14 @@ module math
             gaussian_distribution = sig * dsqrt(-2.d0 * log(a)) * dcos(2.d0 * pi * b)
             gaussian_distribution = gaussian_distribution + mu
         end function gaussian_distribution
+
+
+        !> Maxwell-Boltzmann distribution has mean 0 and variance 1 with coef (kb*T/m)**0.5
+        function maxwell_boltzmann(T, mass)
+            implicit none
+            double precision :: maxwell_boltzmann, T, mass
+            maxwell_boltzmann = dsqrt(kB * T / mass) * gaussian_distribution(0.d0, 1.d0)
+        end function maxwell_boltzmann
 
 
         function cross(a, b)

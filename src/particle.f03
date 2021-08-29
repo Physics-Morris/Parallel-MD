@@ -1,4 +1,5 @@
 module particle
+    use mpi
     use constants
     use shared_data
     use math
@@ -148,7 +149,20 @@ module particle
                 global_part_list(i) % vel_y = 0.d0
                 global_part_list(i) % vel_z = 0.d0
             end do
+        else if (velocity_distribution == 'maxwell_xyz') then
+            do i = 1, total_particles
+                global_part_list(i) % vel_x = maxwell_boltzmann(particle_temp_x, particle_mass)
+                global_part_list(i) % vel_y = maxwell_boltzmann(particle_temp_y, particle_mass)
+                global_part_list(i) % vel_z = maxwell_boltzmann(particle_temp_z, particle_mass)
+            end do
+        else
+            write(*, *) ' unrecongnized option for velocity distribution'
         end if
+
+        do i = 1, total_particles
+            global_part_list(i) % mass = particle_mass
+            global_part_list(i) % charge = particle_charge
+        end do
     end subroutine load_particles_globally
 
 
@@ -186,7 +200,6 @@ module particle
         map_particle_to_global_cell(3) = floor((pos_z - z_min) / wz) + 1
 
     end function map_particle_to_global_cell
-
 
 
 end module particle
