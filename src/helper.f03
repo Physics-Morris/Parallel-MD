@@ -5,24 +5,11 @@ module helper
     use math
     implicit none
 
-    ! character(len=5), dimension(12) :: vt100_control = (/'[39m','[30m','[31m', &
-    ! '[32m','[33m','[34m','[35m','[36m','[1m ','[2m ','[4m ','[0m '/)
-    ! integer, parameter :: term_default_colour = 1
-    ! integer, parameter :: term_black = 2
-    ! integer, parameter :: term_red = 3
-    ! integer, parameter :: term_green = 4
-    ! integer, parameter :: term_yellow = 5
-    ! integer, parameter :: term_blue = 6
-    ! integer, parameter :: term_magnenta = 7
-    ! integer, parameter :: term_cyan = 8
-    ! integer, parameter :: term_bold = 9
-    ! integer, parameter :: term_dim = 10
-    ! integer, parameter :: term_underline = 11
-    ! integer, parameter :: term_reset_attributes = 12
-    ! integer, parameter :: term_max = 12
 
     namelist / basics_block / &
-    sim_dimension, x_min, x_max, y_min, y_max, z_min, z_max
+    sim_dimension, x_min, x_max, y_min, y_max, z_min, z_max, &
+    init_numprocs_x, init_numprocs_y, init_numprocs_z, load_balance, &
+    load_balance_num_step
 
     namelist / particles_block / &
     total_particles, particle_mass, particle_charge, particle_distribution, &
@@ -86,11 +73,18 @@ module helper
         subroutine print_simulation_parameter(status)
             implicit none
             character(len=*)             :: status
+            integer                      :: default_length=19
+
             if (status == 'full') then
                 call print_empty_line(2)
                 write(*, *) ' -----------------------------------------------'
                 call set_term_color(term_default_colour)
                 write(*, '(A30, I19)')     '  Simulation dimension:       ', sim_dimension
+                write(*, '(A35, A2, I2, A2, I2, A2, I2, A2)') &
+                '  Initial proccesor layout:        ',  '[', init_numprocs_x, 'x', &
+                init_numprocs_y, 'x', init_numprocs_z, ']'
+                write(*, '(A30, L19)')     '  Load balancing:             ', load_balance
+                write(*, '(A30, I19)')     '  Load balancing every (step):', load_balance_num_step
                 write(*, '(A30, ES19.2)')  '  x_min of the system:        ', x_min
                 write(*, '(A30, ES19.2)')  '  x_max of the system:        ', x_max
                 write(*, '(A30, ES19.2)')  '  y_min of the system:        ', y_min
@@ -100,8 +94,10 @@ module helper
                 write(*, '(A30, I19)')     '  Total number of particles:  ', total_particles
                 write(*, '(A30, ES19.2)')  '  Particle mass:              ', particle_mass
                 write(*, '(A30, ES19.2)')  '  Particle charge:            ', particle_charge
-                write(*, '(A30, A)')       '  Particle distribution:      ', particle_distribution
-                write(*, '(A30, A)')       '  Velocity distribution:      ', velocity_distribution
+                write(*, '(A30, A, A)')    '  Particle distribution:      ', &
+                repeat(' ', default_length-len(trim(particle_distribution))), particle_distribution
+                write(*, '(A30, A, A)')    '  Velocity distribution:      ', &
+                repeat(' ', default_length-len(trim(velocity_distribution))), velocity_distribution
                 write(*, '(A30, ES19.2)')  '  Particle Temperature in x:  ', particle_temp_x
                 write(*, '(A30, ES19.2)')  '  Particle Temperature in y:  ', particle_temp_y
                 write(*, '(A30, ES19.2)')  '  Particle Temperature in z:  ', particle_temp_z

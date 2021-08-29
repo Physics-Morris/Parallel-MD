@@ -33,5 +33,10 @@ module shared_data
     integer                     :: particle_struc
     !> number of processor in each direction
     integer                     :: numprocs_x, numprocs_y, numprocs_z
+    !> custome initial number of processor in each direction
+    integer                     :: init_numprocs_x, init_numprocs_y, init_numprocs_z
+    !> load balance option
+    logical                     :: load_balance
+    integer                     :: load_balance_num_step
 
 end module shared_data
