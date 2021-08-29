@@ -20,4 +20,21 @@ module constants
     !> master process id
     integer, parameter          :: master_id = 0
 
+    !> terminal related constants
+    character(len=5), dimension(12) :: vt100_control = (/'[39m','[30m','[31m', &
+    '[32m','[33m','[34m','[35m','[36m','[1m ','[2m ','[4m ','[0m '/)
+    integer, parameter :: term_default_colour = 1
+    integer, parameter :: term_black = 2
+    integer, parameter :: term_red = 3
+    integer, parameter :: term_green = 4
+    integer, parameter :: term_yellow = 5
+    integer, parameter :: term_blue = 6
+    integer, parameter :: term_magnenta = 7
+    integer, parameter :: term_cyan = 8
+    integer, parameter :: term_bold = 9
+    integer, parameter :: term_dim = 10
+    integer, parameter :: term_underline = 11
+    integer, parameter :: term_reset_attributes = 12
+    integer, parameter :: term_max = 12
+
 end module constants
