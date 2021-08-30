@@ -3,6 +3,7 @@ module helper
     use mpi
     use constants
     use math
+    use, intrinsic :: iso_c_binding, only: c_int, c_int32_t
     implicit none
 
 
@@ -17,6 +18,15 @@ module helper
 
     namelist / output_block / &
     number_snapshots
+
+    interface
+        ! int usleep(useconds_t useconds)
+        function c_usleep(useconds) bind(c, name='usleep')
+            import :: c_int, c_int32_t
+            integer(kind=c_int32_t), value :: useconds
+            integer(kind=c_int)            :: c_usleep
+        end function c_usleep
+    end interface
 
     contains
 
@@ -73,37 +83,35 @@ module helper
         subroutine print_simulation_parameter(status)
             implicit none
             character(len=*)             :: status
-            integer                      :: default_length=19
 
             if (status == 'full') then
                 call print_empty_line(2)
-                write(*, *) ' -----------------------------------------------'
+                call print_divider('-', 49)
+
                 call set_term_color(term_default_colour)
-                write(*, '(A30, I19)')     '  Simulation dimension:       ', sim_dimension
-                write(*, '(A35, A2, I2, A2, I2, A2, I2, A2)') &
-                '  Initial proccesor layout:        ',  '[', init_numprocs_x, 'x', &
-                init_numprocs_y, 'x', init_numprocs_z, ']'
-                write(*, '(A30, L19)')     '  Load balancing:             ', load_balance
-                write(*, '(A30, I19)')     '  Load balancing every (step):', load_balance_num_step
-                write(*, '(A30, ES19.2)')  '  x_min of the system:        ', x_min
-                write(*, '(A30, ES19.2)')  '  x_max of the system:        ', x_max
-                write(*, '(A30, ES19.2)')  '  y_min of the system:        ', y_min
-                write(*, '(A30, ES19.2)')  '  y_max of the system:        ', y_max
-                write(*, '(A30, ES19.2)')  '  z_min of the system:        ', z_min
-                write(*, '(A30, ES19.2)')  '  z_max of the system:        ', z_max
-                write(*, '(A30, I19)')     '  Total number of particles:  ', total_particles
-                write(*, '(A30, ES19.2)')  '  Particle mass:              ', particle_mass
-                write(*, '(A30, ES19.2)')  '  Particle charge:            ', particle_charge
-                write(*, '(A30, A, A)')    '  Particle distribution:      ', &
-                repeat(' ', default_length-len(trim(particle_distribution))), particle_distribution
-                write(*, '(A30, A, A)')    '  Velocity distribution:      ', &
-                repeat(' ', default_length-len(trim(velocity_distribution))), velocity_distribution
-                write(*, '(A30, ES19.2)')  '  Particle Temperature in x:  ', particle_temp_x
-                write(*, '(A30, ES19.2)')  '  Particle Temperature in y:  ', particle_temp_y
-                write(*, '(A30, ES19.2)')  '  Particle Temperature in z:  ', particle_temp_z
-                write(*, '(A30, I19)')     '  Number of output snapshots: ', number_snapshots
+
+                call check_input_parameter('simulation_dimension')
+                call check_input_parameter('init_procs_layout')
+                call check_input_parameter('load_balance')
+                call check_input_parameter('load_balance_step')
+                call check_input_parameter('x_min')
+                call check_input_parameter('x_max')
+                call check_input_parameter('y_min')
+                call check_input_parameter('y_max')
+                call check_input_parameter('z_min')
+                call check_input_parameter('z_max')
+                call check_input_parameter('total_particles')
+                call check_input_parameter('particle_mass')
+                call check_input_parameter('particle_charge')
+                call check_input_parameter('particle_distribution')
+                call check_input_parameter('particle_velocity_distribution')
+                call check_input_parameter('temp_x')
+                call check_input_parameter('temp_y')
+                call check_input_parameter('temp_z')
+                call check_input_parameter('number_output_snapshots')
+
                 call set_term_color(term_default_colour)
-                write(*, *) ' -----------------------------------------------'
+                call print_divider('-', 49)
                 call print_empty_line(2)
             end if
         end subroutine print_simulation_parameter
@@ -357,5 +365,251 @@ module helper
             min  = int((dble(sec) / dble(3600) - hour) * 60)
             sec  = int((((dble(sec) / dble(3600) - hour) * 60) - min) * 60)
         end subroutine
+
+
+        subroutine print_ok_mark(ierr)
+            implicit none
+            integer :: ierr, rc
+            if (ierr == 0) then
+                rc = c_usleep(500*1000)
+                call set_term_color(term_green)
+                write(*, '(A3)') ' OK' 
+                call set_term_color(term_default_colour)
+                rc = c_usleep(500*1000)
+            else
+                rc = c_usleep(500*1000)
+                call set_term_color(term_red)
+                write(*, '(A2)') ' X' 
+                call set_term_color(term_default_colour)
+                rc = c_usleep(500*1000)
+            end if
+        end subroutine print_ok_mark
+
+
+        subroutine check_input_parameter(name)
+            implicit none
+            character(len=*), intent(in)  :: name
+            double precision              :: acpt_range=1.d-5
+            integer                       :: default_length=19
+
+            select case (name)
+
+            case('simulation_dimension')
+                !> currently only support 3d
+                write(*, '(A30)', advance='no') '  Simulation dimension:       '
+                if (sim_dimension == 3) then
+                    write(*, '(I19)', advance='no') sim_dimension
+                    call print_ok_mark(ierr=0)
+                else 
+                    write(*, '(I19)', advance='no') sim_dimension
+                    call print_ok_mark(ierr=1)
+                    stop
+                end if
+
+            case('init_procs_layout')
+                write(*, '(A35)', advance='no') '  Initial proccesor layout:        '
+                if ((init_numprocs_x >= 1) .and. (init_numprocs_x >= 1) .and. &
+                    (init_numprocs_x >= 1)) then
+                    write(*, '(A2, I2, A2, I2, A2, I2, A2)', advance='no') &
+                    '[', init_numprocs_x, 'x', init_numprocs_y, 'x', init_numprocs_z, ']'
+                    call print_ok_mark(ierr=0)
+                else 
+                    write(*, '(A2, I2, A2, I2, A2, I2, A2)', advance='no') &
+                    '[', init_numprocs_x, 'x', init_numprocs_y, 'x', init_numprocs_z, ']'
+                    call print_ok_mark(ierr=1)
+                    stop
+                end if
+
+            case('load_balance')
+                write(*, '(A30, L19)', advance='no')     '  Load balancing:             ', load_balance
+                call print_ok_mark(ierr=0)
+
+            case('load_balance_step')
+                write(*, '(A30)', advance='no') '  Load balancing every (step):'
+                !> load balance step must greater than 0
+                if ((load_balance .eqv. .true.).and.(load_balance_num_step <= 0)) then
+                    write(*, '(I19)', advance='no') load_balance_num_step
+                    call print_ok_mark(ierr=1)
+                    stop
+                else 
+                    write(*, '(I19)', advance='no') load_balance_num_step
+                    call print_ok_mark(ierr=0)
+                end if
+
+            case('x_min')
+                write(*, '(A30)', advance='no') '  x_min of the system:        '
+                if (x_min >= x_max) then
+                    write(*, '(ES19.2)', advance='no') x_min
+                    call print_ok_mark(ierr=1)
+                else 
+                    write(*, '(ES19.2)', advance='no') x_min
+                    call print_ok_mark(ierr=0)
+                end if
+
+            case('x_max')
+                write(*, '(A30)', advance='no') '  x_max of the system:        '
+                if (x_min >= x_max) then
+                    write(*, '(ES19.2)', advance='no') x_max
+                    call print_ok_mark(ierr=1)
+                    stop
+                else 
+                    write(*, '(ES19.2)', advance='no') x_max
+                    call print_ok_mark(ierr=0)
+                end if
+
+            case('y_min')
+                write(*, '(A30)', advance='no') '  y_min of the system:        '
+                if (y_min >= y_max) then
+                    write(*, '(ES19.2)', advance='no') y_min
+                    call print_ok_mark(ierr=1)
+                else 
+                    write(*, '(ES19.2)', advance='no') y_min
+                    call print_ok_mark(ierr=0)
+                end if
+
+            case('y_max')
+                write(*, '(A30)', advance='no') '  y_max of the system:        '
+                if (y_min >= y_max) then
+                    write(*, '(ES19.2)', advance='no') y_max
+                    call print_ok_mark(ierr=1)
+                    stop
+                else 
+                    write(*, '(ES19.2)', advance='no') y_max
+                    call print_ok_mark(ierr=0)
+                end if
+
+            case('z_min')
+                write(*, '(A30)', advance='no') '  z_min of the system:        '
+                if (z_min >= z_max) then
+                    write(*, '(ES19.2)', advance='no') z_min
+                    call print_ok_mark(ierr=1)
+                else 
+                    write(*, '(ES19.2)', advance='no') z_min
+                    call print_ok_mark(ierr=0)
+                end if
+
+            case('z_max')
+                write(*, '(A30)', advance='no') '  z_max of the system:        '
+                if (z_min >= z_max) then
+                    write(*, '(ES19.2)', advance='no') z_max
+                    call print_ok_mark(ierr=1)
+                    stop
+                else 
+                    write(*, '(ES19.2)', advance='no') z_max
+                    call print_ok_mark(ierr=0)
+                end if
+
+            case('total_particles')
+                write(*, '(A30, I19)', advance='no')     '  Total number of particles:  ', total_particles
+                if (total_particles <= 0) then
+                    call print_ok_mark(ierr=1)
+                    stop
+                else 
+                    call print_ok_mark(ierr=0)
+                end if
+
+            case('particle_mass')
+                write(*, '(A30)', advance='no') '  Particle mass:              '
+                !> if particle mass = -1 than it is electron
+                if (abs(particle_mass+1.d0) <= acpt_range) then
+                    particle_mass = m0
+                    write(*, '(ES19.2)', advance='no') particle_mass
+                    call print_ok_mark(ierr=0)
+                !> if particle mass = 1 than it is proton
+                else if (abs(particle_mass-1.d0) <= acpt_range) then
+                    particle_mass = 1836.d0 * m0
+                    write(*, '(ES19.2)', advance='no') particle_mass
+                    call print_ok_mark(ierr=0)
+                !> if particle mass < -1 than is it the number of times of
+                !> the mass of electron
+                else if ((particle_mass < 0.d0).and.(abs(particle_mass+1.d0) >= acpt_range)) then
+                    particle_mass = abs(particle_mass) * m0
+                    write(*, '(ES19.2)', advance='no') particle_mass
+                    call print_ok_mark(ierr=0)
+                else 
+                    write(*, '(ES19.2)', advance='no') particle_mass
+                    call print_ok_mark(ierr=0)
+                end if
+
+            case('particle_charge')
+                write(*, '(A30)', advance='no') '  Particle charge:            '
+                !> if particle charge = -1 than it is electron
+                particle_charge = particle_charge * q0
+                write(*, '(ES19.2)', advance='no') particle_charge
+                call print_ok_mark(ierr=0)
+        
+            case('particle_distribution')
+                write(*, '(A30, A, A)', advance='no')    '  Particle distribution:      ', &
+                repeat(' ', default_length-len(trim(particle_distribution))), trim(particle_distribution)
+                call print_ok_mark(ierr=0)
+
+            case('particle_velocity_distribution')
+                write(*, '(A30, A, A)', advance='no')    '  Velocity distribution:      ', &
+                repeat(' ', default_length-len(trim(velocity_distribution))), trim(velocity_distribution)
+                call print_ok_mark(ierr=0)
+
+            case('temp_x')
+                write(*, '(A30)', advance='no') '  Particle Temperature in x:  '
+                !> temperature must >= 0
+                if (particle_temp_x < 0.d0) then
+                    write(*, '(ES19.2)', advance='no') particle_temp_x
+                    call print_ok_mark(ierr=1)
+                    stop
+                else
+                    write(*, '(ES19.2)', advance='no') particle_temp_x
+                    call print_ok_mark(ierr=0)
+                end if
+
+            case('temp_y')
+                write(*, '(A30)', advance='no') '  Particle Temperature in y:  '
+                if (particle_temp_y < 0.d0) then
+                    write(*, '(ES19.2)', advance='no') particle_temp_y
+                    call print_ok_mark(ierr=1)
+                    stop
+                else
+                    write(*, '(ES19.2)', advance='no') particle_temp_y
+                    call print_ok_mark(ierr=0)
+                end if
+
+            case('temp_z')
+                write(*, '(A30)', advance='no') '  Particle Temperature in z:  '
+                if (particle_temp_z < 0.d0) then
+                    write(*, '(ES19.2)', advance='no') particle_temp_z
+                    call print_ok_mark(ierr=1)
+                    stop
+                else
+                    write(*, '(ES19.2)', advance='no') particle_temp_z
+                    call print_ok_mark(ierr=0)
+                end if
+
+            case('number_output_snapshots')
+                write(*, '(A30)', advance='no') '  Number of output snapshots: '
+                !> number of snapshot(s) must >= 0 (0 for no output)
+                if (number_snapshots < 0) then
+                    write(*, '(I19)', advance='no') number_snapshots
+                    call print_ok_mark(ierr=1)
+                    stop
+                else
+                    write(*, '(I19)', advance='no') number_snapshots
+                    call print_ok_mark(ierr=0)
+                end if
+
+            end select
+        end subroutine check_input_parameter
+
+
+        subroutine print_divider(target, length)
+            implicit none
+            character(len=*) :: target
+            integer          :: length, i, rc
+            
+            write(*, '(A)', advance='no') '  '
+            do i = 1, length
+                write(*, '(A)', advance='no') target
+                rc = c_usleep(20*1000)
+            end do
+            write(*, '(A)') target
+        end subroutine print_divider
+
 
 end module helper

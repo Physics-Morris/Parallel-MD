@@ -11,6 +11,7 @@ module particle
         integer          :: global_cell_index_x
         integer          :: global_cell_index_y
         integer          :: global_cell_index_z
+        integer          :: procs_rank
         double precision :: mass, charge
         double precision :: pos_x, pos_y, pos_z
         double precision :: vel_x, vel_y, vel_z
@@ -89,6 +90,7 @@ module particle
         this % global_cell_index_x = 0
         this % global_cell_index_y = 0
         this % global_cell_index_z = 0
+        this % procs_rank = 0
         this % mass = 0.d0
         this % charge = 0.d0
         this % pos_x = 0.d0
@@ -140,6 +142,9 @@ module particle
             ! use custom fucntion locate in user_custom directory
             ! (add in the future)
             !>
+        else
+            write(*, *) ' unrecongnized option for particle distribution'
+            stop
         end if
 
         !> load particle velocity distrituion
@@ -157,6 +162,7 @@ module particle
             end do
         else
             write(*, *) ' unrecongnized option for velocity distribution'
+            stop
         end if
 
         do i = 1, total_particles
