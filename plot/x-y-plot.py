@@ -53,6 +53,7 @@ for i in range(hdf_start, hdf_end+1):
     particle_position = np.array(hf.get('particle_position')[:])
     particle_velocity = np.array(hf.get('particle_velocity')[:])
     particle_index = np.array(hf.get('global_cell_index')[:])
+    particle_procs = np.array(hf.get('processor_rank')[:])
 
 ax.plot(particle_position[:, 0], particle_position[:, 1], '.', color=colors(0), \
         label='particle', markersize=.5)

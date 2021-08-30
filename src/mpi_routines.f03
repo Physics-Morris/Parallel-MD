@@ -10,7 +10,7 @@ module mpi_routines
     contains
 
 
-    subroutine mpi_cores_check
+    subroutine mpi_sqrt_cores_check
         implicit none
         integer          :: numprocs, my_id, ierr
         double precision :: sq_numprocs
@@ -32,7 +32,7 @@ module mpi_routines
             call mpi_finalize(ierr)
             stop
         end if
-    end subroutine mpi_cores_check
+    end subroutine mpi_sqrt_cores_check
 
 
     subroutine mpi_finish
@@ -343,5 +343,17 @@ module mpi_routines
         end if
     end subroutine get_local_min_max
 
+
+    !> one recv particle in local_part_list update procs rank each particle in
+    subroutine update_particle_procs_rank(ierr)
+        implicit none
+        integer, intent(out) :: ierr
+        integer              :: i, my_id
+
+        call mpi_comm_rank(cart_comm_3d, my_id, ierr)
+        do i = 1, local_particles
+            local_part_list(i) % procs_rank = my_id
+        end do
+    end subroutine update_particle_procs_rank
 
 end module mpi_routines

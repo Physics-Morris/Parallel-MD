@@ -29,6 +29,7 @@ module diagnostics
         character(len=17), parameter                           :: dsetname_vel = "particle_velocity" 
         character(len=17), parameter                           :: dsetname_pos = "particle_position" 
         character(len=17), parameter                           :: dsetname_index = "global_cell_index" 
+        character(len=14), parameter                           :: dsetname_procs = "processor_rank" 
         !> file identifier 
         integer(hid_t)                                         :: file_id       
         !> dataset identifier 
@@ -38,6 +39,7 @@ module diagnostics
         integer(hid_t)                                         :: dsetid_vel
         integer(hid_t)                                         :: dsetid_pos
         integer(hid_t)                                         :: dsetid_index
+        integer(hid_t)                                         :: dsetid_procs
         !> dataspace identifier in file 
         integer(hid_t)                                         :: filespace_id     
         integer(hid_t)                                         :: filespace_mass
@@ -45,6 +47,7 @@ module diagnostics
         integer(hid_t)                                         :: filespace_vel     
         integer(hid_t)                                         :: filespace_pos     
         integer(hid_t)                                         :: filespace_index     
+        integer(hid_t)                                         :: filespace_procs     
         !> dataspace identifier in memory
         integer(hid_t)                                         :: memspace_id
         integer(hid_t)                                         :: memspace_mass
@@ -52,6 +55,7 @@ module diagnostics
         integer(hid_t)                                         :: memspace_vel
         integer(hid_t)                                         :: memspace_pos
         integer(hid_t)                                         :: memspace_index
+        integer(hid_t)                                         :: memspace_procs
         !> property list identifier 
         integer(hid_t)                                         :: plist_id      
         !> dataset dimensions.
@@ -61,6 +65,7 @@ module diagnostics
         integer(hsize_t), dimension(2)                         :: dim_vel
         integer(hsize_t), dimension(2)                         :: dim_pos
         integer(hsize_t), dimension(2)                         :: dim_index
+        integer(hsize_t), dimension(2)                         :: dim_procs
 
         integer(hsize_t), dimension(2)                         :: count_id
         integer(hsize_t), dimension(2)                         :: count_mass
@@ -68,6 +73,7 @@ module diagnostics
         integer(hsize_t), dimension(2)                         :: count_vel
         integer(hsize_t), dimension(2)                         :: count_pos
         integer(hsize_t), dimension(2)                         :: count_index
+        integer(hsize_t), dimension(2)                         :: count_procs
 
         integer(hssize_t), dimension(2)                        :: offset_id
         integer(hssize_t), dimension(2)                        :: offset_mass
@@ -75,6 +81,7 @@ module diagnostics
         integer(hssize_t), dimension(2)                        :: offset_vel
         integer(hssize_t), dimension(2)                        :: offset_pos
         integer(hssize_t), dimension(2)                        :: offset_index
+        integer(hssize_t), dimension(2)                        :: offset_procs
 
         !> data to write
         integer, allocatable                                   :: data_id(:, :)
@@ -83,6 +90,7 @@ module diagnostics
         double precision, allocatable                          :: data_vel(:, :)
         double precision, allocatable                          :: data_pos(:, :)
         integer, allocatable                                   :: data_index(:, :)
+        integer, allocatable                                   :: data_procs(:, :)
 
         !> dataset rank 
         integer                                                :: rank_id = 2
@@ -91,6 +99,7 @@ module diagnostics
         integer                                                :: rank_vel = 2
         integer                                                :: rank_pos = 2
         integer                                                :: rank_index = 2
+        integer                                                :: rank_procs = 2
 
         !> error flags
         integer :: error
@@ -143,6 +152,8 @@ module diagnostics
         dim_pos(2)    = global_part_num
         dim_index(1)  = 3
         dim_index(2)  = global_part_num
+        dim_procs(1)  = 1
+        dim_procs(2)  = global_part_num
 
         !> initialize fortran predefined datatypes
         call h5open_f(error) 
@@ -162,6 +173,7 @@ module diagnostics
         call h5screate_simple_f(rank_vel,    dim_vel,    filespace_vel,    error)
         call h5screate_simple_f(rank_pos,    dim_pos,    filespace_pos,    error)
         call h5screate_simple_f(rank_index,  dim_index,  filespace_index,  error)
+        call h5screate_simple_f(rank_procs,  dim_procs,  filespace_procs,  error)
 
         !> create the dataset with default properties.
         call h5dcreate_f(file_id, dsetname_id,     h5t_native_integer, filespace_id,     dsetid_id,     error)
@@ -170,12 +182,14 @@ module diagnostics
         call h5dcreate_f(file_id, dsetname_vel,    h5t_ieee_f64le,     filespace_vel,    dsetid_vel,    error)
         call h5dcreate_f(file_id, dsetname_pos,    h5t_ieee_f64le,     filespace_pos,    dsetid_pos,    error)
         call h5dcreate_f(file_id, dsetname_index,  h5t_native_integer, filespace_index,  dsetid_index,  error)
+        call h5dcreate_f(file_id, dsetname_procs,  h5t_native_integer, filespace_procs,  dsetid_procs,  error)
         call h5sclose_f(filespace_id,     error)
         call h5sclose_f(filespace_mass,   error)
         call h5sclose_f(filespace_charge, error)
         call h5sclose_f(filespace_vel,    error)
         call h5sclose_f(filespace_pos,    error)
         call h5sclose_f(filespace_index,  error)
+        call h5sclose_f(filespace_procs,  error)
 
         !> each process defines dataset in memory and writes it to the hyperslab in the file. 
         count_id(1)       = dim_id(1)
@@ -202,6 +216,10 @@ module diagnostics
         count_index(2)    = count_part
         offset_index(1)   = 0
         offset_index(2)   = part_offset
+        count_procs(1)    = dim_procs(1)
+        count_procs(2)    = count_part
+        offset_procs(1)   = 0
+        offset_procs(2)   = part_offset
 
         call h5screate_simple_f(rank_id,     count_id,     memspace_id,     error) 
         call h5screate_simple_f(rank_mass,   count_mass,   memspace_mass,   error) 
@@ -209,6 +227,7 @@ module diagnostics
         call h5screate_simple_f(rank_vel,    count_vel,    memspace_vel,    error) 
         call h5screate_simple_f(rank_pos,    count_pos,    memspace_pos,    error) 
         call h5screate_simple_f(rank_index,  count_index,  memspace_index,  error) 
+        call h5screate_simple_f(rank_procs,  count_procs,  memspace_procs,  error) 
 
         !> select hyperslab in the file.
         call h5dget_space_f(dsetid_id,     filespace_id,     error)
@@ -217,12 +236,14 @@ module diagnostics
         call h5dget_space_f(dsetid_vel,    filespace_vel,    error)
         call h5dget_space_f(dsetid_pos,    filespace_pos,    error)
         call h5dget_space_f(dsetid_index,  filespace_index,  error)
+        call h5dget_space_f(dsetid_procs,  filespace_procs,  error)
         call h5sselect_hyperslab_f(filespace_id,     h5s_select_set_f, offset_id,     count_id,     error)
         call h5sselect_hyperslab_f(filespace_mass,   h5s_select_set_f, offset_mass,   count_mass,   error)
         call h5sselect_hyperslab_f(filespace_charge, h5s_select_set_f, offset_charge, count_charge, error)
         call h5sselect_hyperslab_f(filespace_vel,    h5s_select_set_f, offset_vel,    count_vel,    error)
         call h5sselect_hyperslab_f(filespace_pos,    h5s_select_set_f, offset_pos,    count_pos,    error)
         call h5sselect_hyperslab_f(filespace_index,  h5s_select_set_f, offset_index,  count_index,  error)
+        call h5sselect_hyperslab_f(filespace_procs,  h5s_select_set_f, offset_procs,  count_procs,  error)
 
         !> allocate data
         allocate(data_id(count_id(1), count_id(2)))
@@ -231,6 +252,7 @@ module diagnostics
         allocate(data_vel(count_vel(1), count_vel(2)))
         allocate(data_pos(count_pos(1), count_pos(2)))
         allocate(data_index(count_index(1), count_index(2)))
+        allocate(data_procs(count_procs(1), count_procs(2)))
 
         !> initilize data
         do i = 1, count_part
@@ -246,6 +268,7 @@ module diagnostics
             data_index(1, i)  = local_part_list(i) % global_cell_index_x
             data_index(2, i)  = local_part_list(i) % global_cell_index_y
             data_index(3, i)  = local_part_list(i) % global_cell_index_z
+            data_procs(1, i)  = local_part_list(i) % procs_rank
         end do
 
         ! !> create property list for collective dataset write
@@ -265,9 +288,16 @@ module diagnostics
                         file_space_id = filespace_pos, mem_space_id = memspace_pos, xfer_prp = plist_id)
         call h5dwrite_f(dsetid_index, h5t_native_integer, data_index, dim_index, error, &
                         file_space_id = filespace_index, mem_space_id = memspace_index, xfer_prp = plist_id)
+        call h5dwrite_f(dsetid_procs, h5t_native_integer, data_procs, dim_procs, error, &
+                        file_space_id = filespace_procs, mem_space_id = memspace_procs, xfer_prp = plist_id)
 
         deallocate(data_id)
         deallocate(data_mass)
+        deallocate(data_charge)
+        deallocate(data_vel)
+        deallocate(data_pos)
+        deallocate(data_index)
+        deallocate(data_procs)
 
         !> close dataspaces.
         call h5sclose_f(filespace_id,     error)
@@ -276,12 +306,15 @@ module diagnostics
         call h5sclose_f(filespace_vel,    error)
         call h5sclose_f(filespace_pos,    error)
         call h5sclose_f(filespace_index,  error)
+        call h5sclose_f(filespace_procs,  error)
+
         call h5sclose_f(memspace_id,      error)
         call h5sclose_f(memspace_mass,    error)
         call h5sclose_f(memspace_charge,  error)
         call h5sclose_f(memspace_vel,     error)
         call h5sclose_f(memspace_pos,     error)
         call h5sclose_f(memspace_index,   error)
+        call h5sclose_f(memspace_procs,   error)
 
         !> close the dataset and property list.
         call h5dclose_f(dsetid_id,     error)
@@ -290,6 +323,8 @@ module diagnostics
         call h5dclose_f(dsetid_vel,    error)
         call h5dclose_f(dsetid_pos,    error)
         call h5dclose_f(dsetid_index,  error)
+        call h5dclose_f(dsetid_procs,  error)
+
         call h5pclose_f(plist_id, error)
 
         !> close the file.
