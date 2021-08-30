@@ -13,7 +13,8 @@ program MD
     green_light = .False.
 
     !> checking mpi core
-    call mpi_sqrt_cores_check
+    ! call mpi_cube_cores_check
+    call mpi_setup
     call mpi_comm_rank(mpi_comm_world, my_id, ierr)
     call mpi_comm_size(mpi_comm_world, numprocs, ierr)
 

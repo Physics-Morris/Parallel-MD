@@ -3,7 +3,7 @@ module shared_data
     implicit none
 
     !> program control related shared data
-    character(len=*), parameter :: VERSION = '1.0'
+    character(len=*), parameter :: VERSION = 'v.0.1'
     logical                     :: green_light
     double precision            :: sim_start_time, sim_end_time
 
@@ -14,6 +14,8 @@ module shared_data
     double precision            :: x_min_local, x_max_local
     double precision            :: y_min_local, y_max_local
     double precision            :: z_min_local, z_max_local
+    !> boundary condition
+    character(len=20)           :: part_boundary_x, part_boundary_y, part_boundary_z
 
     integer                     :: step=0
 

@@ -10,7 +10,22 @@ module mpi_routines
     contains
 
 
-    subroutine mpi_sqrt_cores_check
+    subroutine mpi_setup
+        implicit none
+        integer          :: numprocs, my_id, ierr
+
+        call mpi_init(ierr)
+        call mpi_comm_size(mpi_comm_world, numprocs, ierr)
+        call mpi_comm_rank(mpi_comm_world, my_id, ierr)
+
+        if (my_id == master_id) then
+            sim_start_time = mpi_wtime()
+        end if
+    end subroutine mpi_setup
+
+
+    !> old routine (cores must be perfect cube)
+    subroutine mpi_cube_cores_check
         implicit none
         integer          :: numprocs, my_id, ierr
         double precision :: sq_numprocs
@@ -32,7 +47,7 @@ module mpi_routines
             call mpi_finalize(ierr)
             stop
         end if
-    end subroutine mpi_sqrt_cores_check
+    end subroutine mpi_cube_cores_check
 
 
     subroutine mpi_finish
@@ -90,6 +105,11 @@ module mpi_routines
         call mpi_bcast(y_max, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)
         call mpi_bcast(z_min, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)
         call mpi_bcast(z_max, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(init_numprocs_x, 1, mpi_integer, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(init_numprocs_y, 1, mpi_integer, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(init_numprocs_z, 1, mpi_integer, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(load_balance, 1, mpi_logical, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(load_balance_num_step, 1, mpi_integer, master_id, mpi_comm_world, ierr)
         call mpi_bcast(total_particles, 1, mpi_integer, master_id, mpi_comm_world, ierr)
         call mpi_bcast(particle_mass, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)
         call mpi_bcast(particle_charge, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)

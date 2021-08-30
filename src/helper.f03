@@ -407,9 +407,10 @@ module helper
                 end if
 
             case('init_procs_layout')
+                !> sepcify proccsor layout must match numprocs
+                call mpi_comm_size(mpi_comm_world, numprocs, ierr)
                 write(*, '(A35)', advance='no') '  Initial proccesor layout:        '
-                if ((init_numprocs_x >= 1) .and. (init_numprocs_x >= 1) .and. &
-                    (init_numprocs_x >= 1)) then
+                if (init_numprocs_x*init_numprocs_y*init_numprocs_z == numprocs) then
                     write(*, '(A2, I2, A2, I2, A2, I2, A2)', advance='no') &
                     '[', init_numprocs_x, 'x', init_numprocs_y, 'x', init_numprocs_z, ']'
                     call print_ok_mark(ierr=0)
