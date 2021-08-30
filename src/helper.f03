@@ -606,7 +606,7 @@ module helper
             write(*, '(A)', advance='no') '  '
             do i = 1, length
                 write(*, '(A)', advance='no') target
-                rc = c_usleep(10*1000)
+                rc = c_usleep(20*1000)
             end do
             write(*, '(A)') target
         end subroutine print_divider

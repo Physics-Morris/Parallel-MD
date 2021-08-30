@@ -140,6 +140,9 @@ module particle
             ! use custom fucntion locate in user_custom directory
             ! (add in the future)
             !>
+        else
+            write(*, *) ' unrecongnized option for particle distribution'
+            stop
         end if
 
         !> load particle velocity distrituion
@@ -157,6 +160,7 @@ module particle
             end do
         else
             write(*, *) ' unrecongnized option for velocity distribution'
+            stop
         end if
 
         do i = 1, total_particles
