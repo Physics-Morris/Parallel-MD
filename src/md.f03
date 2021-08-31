@@ -45,6 +45,20 @@ program MD
     call respond_to_ierr(ierr)
 
 
+    !> set up auxiliary cell
+    call print_execute_task_name('  Setup auxiliary cells ... ', task_start_time)
+    call auxiliary_cell_setup(numprocs_x, numprocs_y, numprocs_z, ierr)
+    call print_task_time(task_start_time)
+    call respond_to_ierr(ierr)
+
+
+    !> fill up auxiliary cell
+    call print_execute_task_name('  Filling up auxiliary cells ... ', task_start_time)
+    call fillup_auxi_cell(numprocs_x, numprocs_y, numprocs_z, ierr)
+    call print_task_time(task_start_time)
+    call respond_to_ierr(ierr)
+
+
     !> create particle struc for mpi send recv
     call print_execute_task_name('  Submitting particle structure ... ', task_start_time)
     call create_mpi_particle_struc(particle_struc, ierr)

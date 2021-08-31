@@ -19,7 +19,7 @@ plt.rcParams['axes.linewidth'] = 1
 
 plt.style.use('dark_background')
 
-colors = cm.get_cmap('tab20b', 27)
+colors = cm.get_cmap('tab20', 6)
 
 fig = plt.figure()
 ax = fig.add_subplot(1, 1, 1)
@@ -59,7 +59,6 @@ for i in range(particle_id.shape[0]):
     ax.plot(particle_position[i, 0], particle_position[i, 1], '.', \
             color=colors(particle_procs[i, 0]), markersize=.5)
 
-# ax.legend()
 ax.set_xlabel('$x$')
 ax.set_ylabel('$y$')
 ax.set_aspect('equal')

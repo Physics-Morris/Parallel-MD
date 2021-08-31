@@ -40,5 +40,10 @@ module shared_data
     !> load balance option
     logical                     :: load_balance
     integer                     :: load_balance_num_step
+    !> auxiliary cells
+    integer, allocatable        :: auxi_cell(:, :, :, :)
+    integer                     :: num_auxi_per_procs=100
+    integer                     :: auxi_num_x, auxi_num_y, auxi_num_z
+    double precision            :: auxi_cell_wx, auxi_cell_wy, auxi_cell_wz
 
 end module shared_data
