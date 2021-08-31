@@ -190,20 +190,33 @@ module particle
     end subroutine unload_particles_locally
 
 
-    !> map particle in global cell
+    !> map particle in global cell using auxi cell
     function map_particle_to_global_cell(pos_x, pos_y, pos_z)
         implicit none
         integer, dimension(3)        :: map_particle_to_global_cell
         double precision, intent(in) :: pos_x, pos_y, pos_z
-        double precision             :: wx, wy, wz
+        ! double precision             :: wx, wy, wz
+        integer                      :: auxi_x, auxi_y, auxi_z
+        integer                      :: procs_id
 
-        wx = (x_max - x_min) / dble(numprocs_x)
-        wy = (y_max - y_min) / dble(numprocs_y)
-        wz = (z_max - z_min) / dble(numprocs_z)
+        ! wx = (x_max - x_min) / dble(numprocs_x)
+        ! wy = (y_max - y_min) / dble(numprocs_y)
+        ! wz = (z_max - z_min) / dble(numprocs_z)
+        ! map_particle_to_global_cell(1) = floor((pos_x - x_min) / wx) + 1
+        ! map_particle_to_global_cell(2) = floor((pos_y - y_min) / wy) + 1
+        ! map_particle_to_global_cell(3) = floor((pos_z - z_min) / wz) + 1
 
-        map_particle_to_global_cell(1) = floor((pos_x - x_min) / wx) + 1
-        map_particle_to_global_cell(2) = floor((pos_y - y_min) / wy) + 1
-        map_particle_to_global_cell(3) = floor((pos_z - z_min) / wz) + 1
+        auxi_x = floor((pos_x / auxi_cell_wx)) + 1
+        auxi_y = floor((pos_y / auxi_cell_wy)) + 1
+        auxi_z = floor((pos_z / auxi_cell_wz)) + 1
+
+        !> get processor id
+        procs_id = auxi_cell(auxi_x, auxi_y, auxi_z, 4)
+
+        !> from processor id to rank (x, y, z)
+        map_particle_to_global_cell(1) = auxi_cell(auxi_x, auxi_y, auxi_z, 1)
+        map_particle_to_global_cell(2) = auxi_cell(auxi_x, auxi_y, auxi_z, 2)
+        map_particle_to_global_cell(3) = auxi_cell(auxi_x, auxi_y, auxi_z, 3)
 
     end function map_particle_to_global_cell
 

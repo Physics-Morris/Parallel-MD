@@ -10,7 +10,22 @@ module mpi_routines
     contains
 
 
-    subroutine mpi_sqrt_cores_check
+    subroutine mpi_setup
+        implicit none
+        integer          :: numprocs, my_id, ierr
+
+        call mpi_init(ierr)
+        call mpi_comm_size(mpi_comm_world, numprocs, ierr)
+        call mpi_comm_rank(mpi_comm_world, my_id, ierr)
+
+        if (my_id == master_id) then
+            sim_start_time = mpi_wtime()
+        end if
+    end subroutine mpi_setup
+
+
+    !> old routine (cores must be perfect cube)
+    subroutine mpi_cube_cores_check
         implicit none
         integer          :: numprocs, my_id, ierr
         double precision :: sq_numprocs
@@ -32,7 +47,7 @@ module mpi_routines
             call mpi_finalize(ierr)
             stop
         end if
-    end subroutine mpi_sqrt_cores_check
+    end subroutine mpi_cube_cores_check
 
 
     subroutine mpi_finish
@@ -90,6 +105,11 @@ module mpi_routines
         call mpi_bcast(y_max, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)
         call mpi_bcast(z_min, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)
         call mpi_bcast(z_max, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(init_numprocs_x, 1, mpi_integer, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(init_numprocs_y, 1, mpi_integer, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(init_numprocs_z, 1, mpi_integer, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(load_balance, 1, mpi_logical, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(load_balance_num_step, 1, mpi_integer, master_id, mpi_comm_world, ierr)
         call mpi_bcast(total_particles, 1, mpi_integer, master_id, mpi_comm_world, ierr)
         call mpi_bcast(particle_mass, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)
         call mpi_bcast(particle_charge, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)
@@ -205,7 +225,7 @@ module mpi_routines
         type(particle_type)                                         :: particle
         integer, intent(out)                                        :: particle_struc
         integer, intent(out)                                        :: ierr
-        integer, parameter                                          :: struc_length=12
+        integer, parameter                                          :: struc_length=13
         integer, dimension(struc_length)                            :: blength
         integer(kind=mpi_address_kind), dimension(struc_length)     :: dist
         integer, dimension(struc_length+1)                          :: addr
@@ -226,6 +246,7 @@ module mpi_routines
         dtype(10) = mpi_double_precision
         dtype(11) = mpi_double_precision
         dtype(12) = mpi_double_precision
+        dtype(13) = mpi_integer
 
         !> block length is 1 same for all
         blength = 1
@@ -244,6 +265,7 @@ module mpi_routines
         call mpi_get_address(particle % vel_x              , addr(11), ierr)
         call mpi_get_address(particle % vel_y              , addr(12), ierr)
         call mpi_get_address(particle % vel_z              , addr(13), ierr)
+        call mpi_get_address(particle % procs_rank         , addr(14), ierr)
 
         !> distance from particle
         do i = 1, struc_length
@@ -295,10 +317,17 @@ module mpi_routines
         integer              :: dim_size(3)
         logical              :: periods(0:2)
 
+        !> finial ckeck on numprocs
+        if (numprocs /= init_numprocs_x*init_numprocs_y*init_numprocs_z) then
+            stop
+        end if
         ndims = 3
-        dim_size(1) = int(numprocs**(1.d0/3.d0))
-        dim_size(2) = int(numprocs**(1.d0/3.d0))
-        dim_size(3) = int(numprocs**(1.d0/3.d0))
+        ! dim_size(1) = int(numprocs**(1.d0/3.d0))
+        ! dim_size(2) = int(numprocs**(1.d0/3.d0))
+        ! dim_size(3) = int(numprocs**(1.d0/3.d0))
+        dim_size(1) = init_numprocs_x
+        dim_size(2) = init_numprocs_y
+        dim_size(3) = init_numprocs_z
         periods(0) = .false.
         periods(1) = .false.
         periods(2) = .false.
@@ -355,5 +384,68 @@ module mpi_routines
             local_part_list(i) % procs_rank = my_id
         end do
     end subroutine update_particle_procs_rank
+    
+
+    !> setup auxililary cell
+    subroutine auxiliary_cell_setup(numprocs_x, numprocs_y, numprocs_z, ierr)
+        implicit none
+        integer :: numprocs_x, numprocs_y, numprocs_z
+        integer :: ierr
+
+        !> number of auxiliary cell
+        auxi_num_x = numprocs_x * num_auxi_per_procs
+        auxi_num_y = numprocs_y * num_auxi_per_procs
+        auxi_num_z = numprocs_z * num_auxi_per_procs
+
+        !> width of auxiliary cell
+        auxi_cell_wx = (x_max - x_min) / dble(auxi_num_x)
+        auxi_cell_wy = (y_max - y_min) / dble(auxi_num_y)
+        auxi_cell_wz = (z_max - z_min) / dble(auxi_num_z)
+
+        !> allocate auxiliary cell
+        allocate(auxi_cell(auxi_num_x, auxi_num_y, auxi_num_z, 4), stat=ierr)
+    end subroutine auxiliary_cell_setup
+
+
+    !> filling up auxiliary cell with equal length at each direction by different procs
+    subroutine fillup_auxi_cell(numprocs_x, numprocs_y, numprocs_z, ierr)
+        implicit none
+        integer          :: numprocs_x, numprocs_y, numprocs_z
+        integer          :: ierr
+        integer          :: i, j, k
+        integer          :: procs_x, procs_y, procs_z
+        double precision :: procs_wx, procs_wy, procs_wz
+        double precision :: cell_cx, cell_cy, cell_cz
+        integer          :: procs_id
+
+        !> processor width in each direction (initially same width)
+        procs_wx = (x_max - x_min) / dble(numprocs_x)
+        procs_wy = (y_max - y_min) / dble(numprocs_y)
+        procs_wz = (z_max - z_min) / dble(numprocs_z)
+
+        do i = 1, auxi_num_x
+            do j = 1, auxi_num_y
+                do k = 1, auxi_num_z
+                    !> center location of auxi cell
+                    cell_cx = auxi_cell_wx * (dble(i) - .5d0)
+                    cell_cy = auxi_cell_wy * (dble(j) - .5d0)
+                    cell_cz = auxi_cell_wz * (dble(k) - .5d0)
+                    procs_x = floor((cell_cx - x_min) / procs_wx)
+                    procs_y = floor((cell_cy - y_min) / procs_wy)
+                    procs_z = floor((cell_cz - z_min) / procs_wz)
+                    procs_id = procs_x * numprocs_y * numprocs_z + procs_y * numprocs_z + procs_z
+                    !> determin cell center belonging processor
+                    !> (1, 2, 3) for cartesian coord of processor (start from 1)
+                    !> 4 for procs_id
+                    auxi_cell(i, j, k, 1) = procs_x + 1
+                    auxi_cell(i, j, k, 2) = procs_y + 1
+                    auxi_cell(i, j, k, 3) = procs_z + 1
+                    auxi_cell(i, j, k, 4) = procs_id
+                end do
+            end do
+        end do
+        ierr = 0
+    end subroutine fillup_auxi_cell
+
 
 end module mpi_routines

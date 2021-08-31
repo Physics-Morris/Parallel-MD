@@ -13,7 +13,8 @@ program MD
     green_light = .False.
 
     !> checking mpi core
-    call mpi_sqrt_cores_check
+    ! call mpi_cube_cores_check
+    call mpi_setup
     call mpi_comm_rank(mpi_comm_world, my_id, ierr)
     call mpi_comm_size(mpi_comm_world, numprocs, ierr)
 
@@ -40,6 +41,20 @@ program MD
     !> create topology
     call print_execute_task_name('  Using Cartesian topology ... ', task_start_time)
     call create_cartesian_topology(ierr, numprocs, cart_comm_3d, numprocs_x, numprocs_y, numprocs_z)
+    call print_task_time(task_start_time)
+    call respond_to_ierr(ierr)
+
+
+    !> set up auxiliary cell
+    call print_execute_task_name('  Setup auxiliary cells ... ', task_start_time)
+    call auxiliary_cell_setup(numprocs_x, numprocs_y, numprocs_z, ierr)
+    call print_task_time(task_start_time)
+    call respond_to_ierr(ierr)
+
+
+    !> fill up auxiliary cell
+    call print_execute_task_name('  Filling up auxiliary cells ... ', task_start_time)
+    call fillup_auxi_cell(numprocs_x, numprocs_y, numprocs_z, ierr)
     call print_task_time(task_start_time)
     call respond_to_ierr(ierr)
 
