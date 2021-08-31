@@ -1,8 +1,8 @@
 &basics_block
 sim_dimension = 3
-init_numprocs_x=2
+init_numprocs_x=3
 init_numprocs_y=2
-init_numprocs_z=2
+init_numprocs_z=1
 load_balance=.true.
 load_balance_num_step=100
 x_min = 0

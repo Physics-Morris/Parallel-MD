@@ -444,7 +444,7 @@ module mpi_routines
                 end do
             end do
         end do
-        ierr = 0
+        call mpi_barrier(cart_comm_3d, ierr)
     end subroutine fillup_auxi_cell
 
 
