@@ -1,0 +1,7 @@
+[
+  {
+    "directory": "/work/morris123/MD/dev/meson_dev/build",
+    "command": "/opt/ohpc/Taiwania3/pkg/intel/2020/compilers_and_libraries_2020.4.304/linux/mpi/intel64/bin/mpiifort -Iprog@exe -I. -I.. -pipe -D_FILE_OFFSET_BITS=64 -warn general -warn truncated_source -O0 -g '-stand f08' -free -implicitnone '-check bounds' -moduleprog@exe   -o 'prog@exe/src_hello.f90.o' -c ../src/hello.f90",
+    "file": "../src/hello.f90"
+  }
+]
