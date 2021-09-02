@@ -458,15 +458,28 @@ module mpi_routines
     subroutine dynamics_load_balance(ierr)
         implicit none
         integer, intent(out)  :: ierr
+        integer               :: i, j, k
+        !> number of slice needs to be made
         integer               :: num_z_slice, num_y_slice, num_x_slice
+        !> z location of the cut
         integer               :: z_slice(numprocs_z-1)
+        !> y location of the cut for particular (z) procs
         integer               :: y_slice(numprocs_z, numprocs_y-1)
+        !> x location of the cut for particular (z, y) procs
         integer               :: x_slice(numprocs_z, numprocs_y, numprocs_x-1)
+        !> target number of the cut
         integer               :: target_part
+        !> keep count of current particle
         integer               :: current_part
-        integer               :: i
+        !> keep count of the number of slice created
         integer               :: current_slice
+        !> the range in z direction of the start and the end of the domain
+        integer               :: z_dir_start, z_dir_end
+        !> the range in y direction of the start and the end of the domain
+        integer               :: y_dir_start, y_dir_end
 
+
+        !> get current processor id
         call mpi_comm_rank(cart_comm_3d, my_id, ierr)
 
         !1> Collect auxiliary grid of particle number in each procs
@@ -474,6 +487,8 @@ module mpi_routines
 
         !2> On master node use rectilienear method for load balance
         if (my_id == master_id) then
+
+            !!!!!!!!!! Start Create Slice !!!!!!!!!!
             num_z_slice = numprocs_z-1
             num_y_slice = numprocs_y-1
             num_x_slice = numprocs_x-1
@@ -502,15 +517,98 @@ module mpi_routines
                 end do
             end if
 
-            !> then y-direction (in every z slice create numprocs_y-1 slice)
+            !> then in every z-slice x-y retangle, create (num_y_slice) slice in y direction
             if (num_y_slice /= 0) then
-                !> in every z-slice x-y retangle, create (num_y_slice) slice in y direction
+                do i = 1, numprocs_z
+                    !> start and end of the slice in z [start, end)
+                    if (i == 1) then
+                        z_dir_start = 1
+                    else
+                        z_dir_start = z_slice(i-1)
+                    end if
+                    if (i == numprocs_z) then
+                        z_dir_end = auxi_num_z
+                    else
+                        z_dir_end = z_slice(i) - 1
+                    end if
+
+                    target_part = sum(auxi_cell(:, :, z_dir_start:z_dir_end, 5)) / numprocs_y
+                    current_part = 0
+                    current_slice = 1
+                    !> go through y direction auxiliary grid to find slice
+                    do j = 1, auxi_num_y 
+                        !> add a slice of x-y plane particle(s)
+                        current_part = current_part + sum(auxi_cell(:, j, z_dir_start:z_dir_end, 5))
+                        !> until it reach desire value
+                        if (current_part >= target_part) then
+                            !> rememeber the location of that slice
+                            y_slice(i, current_slice) = j
+                            current_slice = current_slice + 1
+                            !> if there were enough slice exit, else next slice
+                            if (current_slice > num_y_slice) then
+                                exit
+                            end if
+                            !> reset particle number and continue search for next slice
+                            current_part = 0
+                        end if
+                    end do
+                end do
             end if
 
             !> finally x-direction (in every z,y slice create numprocs_x-1 slice)
             if (num_x_slice /= 0) then
+                do i = 1, numprocs_z
+                    do j = 1, numprocs_y
+                        !> start and end of the slice in z [start, end)
+                        if (i == 1) then
+                            z_dir_start = 1
+                        else
+                            z_dir_start = z_slice(i-1)
+                        end if
+                        if (i == numprocs_z) then
+                            z_dir_end = auxi_num_z
+                        else
+                            z_dir_end = z_slice(i) - 1
+                        end if
+                        
+                        !> start and end of the slice in y [start, end)
+                        if (j == 1) then
+                            y_dir_start = 1
+                        else
+                            y_dir_start = y_slice(i, j-1)
+                        end if
+                        if (j == numprocs_y) then
+                            y_dir_end = auxi_num_y
+                        else
+                            y_dir_end = y_slice(i, j) - 1
+                        end if
 
+                        target_part = sum(auxi_cell(:, y_dir_start:y_dir_end, z_dir_start:z_dir_end, 5)) &
+                                      / numprocs_x
+                        current_part = 0
+                        current_slice = 1
+                        !> go through y direction auxiliary grid to find slice
+                        do k = 1, auxi_num_x
+                            !> add a slice of x-y plane particle(s)
+                            current_part = current_part + &
+                                           sum(auxi_cell(k, y_dir_start:y_dir_end, z_dir_start:z_dir_end, 5))
+                            !> until it reach desire value
+                            if (current_part >= target_part) then
+                                !> rememeber the location of that slice
+                                x_slice(i, j, current_slice) = k
+                                current_slice = current_slice + 1
+                                !> if there were enough slice exit, else next slice
+                                if (current_slice > num_x_slice) then
+                                    exit
+                                end if
+                                !> reset particle number and continue search for next slice
+                                current_part = 0
+                            end if
+                        end do
+                    end do
+                end do
             end if
+            !!!!!!!!!! End Create Slice !!!!!!!!!!
 
         end if
 
