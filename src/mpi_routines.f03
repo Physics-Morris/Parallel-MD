@@ -458,14 +458,59 @@ module mpi_routines
     subroutine dynamics_load_balance(ierr)
         implicit none
         integer, intent(out)  :: ierr
+        integer               :: num_z_slice, num_y_slice, num_x_slice
+        integer               :: z_slice(numprocs_z-1)
+        integer               :: y_slice(numprocs_z, numprocs_y-1)
+        integer               :: x_slice(numprocs_z, numprocs_y, numprocs_x-1)
+        integer               :: target_part
+        integer               :: current_part
+        integer               :: i
+        integer               :: current_slice
 
         call mpi_comm_rank(cart_comm_3d, my_id, ierr)
 
         !1> Collect auxiliary grid of particle number in each procs
-        call auxi_cell_part_num
+        call get_auxi_cell_part_num
 
         !2> On master node use rectilienear method for load balance
         if (my_id == master_id) then
+            num_z_slice = numprocs_z-1
+            num_y_slice = numprocs_y-1
+            num_x_slice = numprocs_x-1
+
+            !> start from z-direction (create numprocs_z-1 slice)
+            if (num_z_slice /= 0) then
+                target_part = sum(auxi_cell(:, :, :, 5)) / numprocs_z
+                current_part = 0
+                current_slice = 1
+                !> go through z direction auxiliary grid to find slice
+                do i = 1, auxi_num_z 
+                    !> add a slice of x-y plane particle(s)
+                    current_part = current_part + sum(auxi_cell(:, :, i, 5))
+                    !> until it reach desire value
+                    if (current_part >= target_part) then
+                        !> rememeber the location of that slice
+                        z_slice(current_slice) = i
+                        current_slice = current_slice + 1
+                        !> if there were enough slice exit, else next slice
+                        if (current_slice > num_z_slice) then
+                            exit
+                        end if
+                        !> reset particle number and continue search for next slice
+                        current_part = 0
+                    end if
+                end do
+            end if
+
+            !> then y-direction (in every z slice create numprocs_y-1 slice)
+            if (num_y_slice /= 0) then
+                !> in every z-slice x-y retangle, create (num_y_slice) slice in y direction
+            end if
+
+            !> finally x-direction (in every z,y slice create numprocs_x-1 slice)
+            if (num_x_slice /= 0) then
+
+            end if
 
         end if
 
@@ -473,7 +518,7 @@ module mpi_routines
 
 
     !> collect auxi cell particle number
-    subroutine auxi_cell_part_num
+    subroutine get_auxi_cell_part_num
         integer               :: i
         integer, allocatable  :: local_num(:, :, :)
         double precision      :: x, y, z
@@ -502,7 +547,7 @@ module mpi_routines
         call mpi_reduce(local_num, auxi_cell(:, :, :, 5), total_auxi, mpi_integer, &
                         mpi_sum, master_id, cart_comm_3d, ierr)
         deallocate(local_num)
-    end subroutine
+    end subroutine get_auxi_cell_part_num
 
 
 end module mpi_routines
