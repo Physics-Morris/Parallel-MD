@@ -5,6 +5,7 @@ module mpi_routines
     use shared_data
     use particle
     use error_handle
+    use omp_lib
     implicit none
     
     contains
@@ -402,8 +403,9 @@ module mpi_routines
         auxi_cell_wy = (y_max - y_min) / dble(auxi_num_y)
         auxi_cell_wz = (z_max - z_min) / dble(auxi_num_z)
 
-        !> allocate auxiliary cell
-        allocate(auxi_cell(auxi_num_x, auxi_num_y, auxi_num_z, 4), stat=ierr)
+        !> allocate auxiliary cell (1, 2, 3 for x, y, z; 4 for id, 5 for num part)
+        allocate(auxi_cell(auxi_num_x, auxi_num_y, auxi_num_z, 5), stat=ierr)
+        auxi_cell = 0
     end subroutine auxiliary_cell_setup
 
 
@@ -446,6 +448,61 @@ module mpi_routines
         end do
         call mpi_barrier(cart_comm_3d, ierr)
     end subroutine fillup_auxi_cell
+
+
+    !> subroutine for dynamics load balance use rectilinear method
+    !1> Collect auxiliary grid of particle number in each procs
+    !2> On master node use rectilienear method for load balance
+    !3> Update auxi_cell for each procs
+    !4> Redistribute particle
+    subroutine dynamics_load_balance(ierr)
+        implicit none
+        integer, intent(out)  :: ierr
+
+        call mpi_comm_rank(cart_comm_3d, my_id, ierr)
+
+        !1> Collect auxiliary grid of particle number in each procs
+        call auxi_cell_part_num
+
+        !2> On master node use rectilienear method for load balance
+        if (my_id == master_id) then
+
+        end if
+
+    end subroutine dynamics_load_balance
+
+
+    !> collect auxi cell particle number
+    subroutine auxi_cell_part_num
+        integer               :: i
+        integer, allocatable  :: local_num(:, :, :)
+        double precision      :: x, y, z
+        integer               :: cell_x, cell_y, cell_z
+        integer               :: total_auxi
+
+        call mpi_comm_rank(cart_comm_3d, my_id, ierr)
+        allocate(local_num(auxi_num_x, auxi_num_y, auxi_num_z))
+        local_num = 0
+
+        !> first loop over local particle and fill up local_num
+        do i = 1, local_particles
+            x = local_part_list(i) % pos_x
+            y = local_part_list(i) % pos_y
+            z = local_part_list(i) % pos_z
+            !> find out which auxi cell part in
+            cell_x = floor((x - x_min) / auxi_cell_wx) + 1
+            cell_y = floor((y - y_min) / auxi_cell_wy) + 1
+            cell_z = floor((z - z_min) / auxi_cell_wz) + 1
+            local_num(cell_x, cell_y, cell_z) = local_num(cell_x, cell_y, cell_z) + 1
+        end do
+
+        !> after caluclate locally master collect all the data from procs in to auxi_cell
+        auxi_cell(:, :, :, 5) = 0
+        total_auxi = auxi_num_x * auxi_num_y * auxi_num_z
+        call mpi_reduce(local_num, auxi_cell(:, :, :, 5), total_auxi, mpi_integer, &
+                        mpi_sum, master_id, cart_comm_3d, ierr)
+        deallocate(local_num)
+    end subroutine
 
 
 end module mpi_routines

@@ -3,6 +3,7 @@ module helper
     use mpi
     use constants
     use math
+    use omp_lib
     use, intrinsic :: iso_c_binding, only: c_int, c_int32_t
     implicit none
 
@@ -14,7 +15,8 @@ module helper
 
     namelist / particles_block / &
     total_particles, particle_mass, particle_charge, particle_distribution, &
-    velocity_distribution, particle_temp_x, particle_temp_y, particle_temp_z
+    velocity_distribution, particle_temp_x, particle_temp_y, particle_temp_z, &
+    part_boundary_x, part_boundary_y, part_boundary_z
 
     namelist / output_block / &
     number_snapshots
@@ -108,6 +110,9 @@ module helper
                 call check_input_parameter('temp_x')
                 call check_input_parameter('temp_y')
                 call check_input_parameter('temp_z')
+                call check_input_parameter('part_boundary_x')
+                call check_input_parameter('part_boundary_y')
+                call check_input_parameter('part_boundary_z')
                 call check_input_parameter('number_output_snapshots')
 
                 call set_term_color(term_default_colour)
@@ -297,7 +302,8 @@ module helper
 
         subroutine successful
             implicit none
-            call sleep(1)
+            integer :: rc
+            rc = c_usleep(200*1000)
             call set_term_color(term_green)
             green_light = .True.
             write(*, *) 'Successful'
@@ -307,7 +313,8 @@ module helper
 
         subroutine failed
             implicit none
-            call sleep(1)
+            integer :: rc
+            rc = c_usleep(200*1000)
             call set_term_color(term_red)
             green_light = .False.
             write(*, *) 'Failed'
@@ -371,17 +378,17 @@ module helper
             implicit none
             integer :: ierr, rc
             if (ierr == 0) then
-                rc = c_usleep(500*1000)
+                rc = c_usleep(200*1000)
                 call set_term_color(term_green)
                 write(*, '(A3)') ' OK' 
                 call set_term_color(term_default_colour)
-                rc = c_usleep(500*1000)
+                rc = c_usleep(200*1000)
             else
-                rc = c_usleep(500*1000)
+                rc = c_usleep(200*1000)
                 call set_term_color(term_red)
                 write(*, '(A2)') ' X' 
                 call set_term_color(term_default_colour)
-                rc = c_usleep(500*1000)
+                rc = c_usleep(200*1000)
             end if
         end subroutine print_ok_mark
 
@@ -582,6 +589,21 @@ module helper
                     write(*, '(ES19.2)', advance='no') particle_temp_z
                     call print_ok_mark(ierr=0)
                 end if
+
+            case('part_boundary_x')
+                write(*, '(A30, A, A)', advance='no') '  Particle Boundary in x:     ', &
+                repeat(' ', default_length-len(trim(part_boundary_x))), trim(part_boundary_x)
+                call print_ok_mark(ierr=0)
+
+            case('part_boundary_y')
+                write(*, '(A30, A, A)', advance='no') '  Particle Boundary in y:     ', &
+                repeat(' ', default_length-len(trim(part_boundary_y))), trim(part_boundary_y)
+                call print_ok_mark(ierr=0)
+
+            case('part_boundary_z')
+                write(*, '(A30, A, A)', advance='no') '  Particle Boundary in z:     ', &
+                repeat(' ', default_length-len(trim(part_boundary_z))), trim(part_boundary_z)
+                call print_ok_mark(ierr=0)
 
             case('number_output_snapshots')
                 write(*, '(A30)', advance='no') '  Number of output snapshots: '
