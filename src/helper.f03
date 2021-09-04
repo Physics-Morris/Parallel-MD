@@ -11,7 +11,7 @@ module helper
     namelist / basics_block / &
     sim_dimension, x_min, x_max, y_min, y_max, z_min, z_max, &
     init_numprocs_x, init_numprocs_y, init_numprocs_z, load_balance, &
-    load_balance_num_step
+    load_balance_num_step, load_balance_extent
 
     namelist / particles_block / &
     total_particles, particle_mass, particle_charge, particle_distribution, &
@@ -96,6 +96,7 @@ module helper
                 call check_input_parameter('init_procs_layout')
                 call check_input_parameter('load_balance')
                 call check_input_parameter('load_balance_step')
+                call check_input_parameter('load_balance_extent')
                 call check_input_parameter('x_min')
                 call check_input_parameter('x_max')
                 call check_input_parameter('y_min')
@@ -303,7 +304,7 @@ module helper
         subroutine successful
             implicit none
             integer :: rc
-            rc = c_usleep(200*1000)
+            rc = c_usleep(100*1000)
             call set_term_color(term_green)
             green_light = .True.
             write(*, *) 'Successful'
@@ -314,7 +315,7 @@ module helper
         subroutine failed
             implicit none
             integer :: rc
-            rc = c_usleep(200*1000)
+            rc = c_usleep(100*1000)
             call set_term_color(term_red)
             green_light = .False.
             write(*, *) 'Failed'
@@ -378,17 +379,17 @@ module helper
             implicit none
             integer :: ierr, rc
             if (ierr == 0) then
-                rc = c_usleep(200*1000)
+                rc = c_usleep(100*1000)
                 call set_term_color(term_green)
                 write(*, '(A3)') ' OK' 
                 call set_term_color(term_default_colour)
-                rc = c_usleep(200*1000)
+                rc = c_usleep(100*1000)
             else
-                rc = c_usleep(200*1000)
+                rc = c_usleep(100*1000)
                 call set_term_color(term_red)
                 write(*, '(A2)') ' X' 
                 call set_term_color(term_default_colour)
-                rc = c_usleep(200*1000)
+                rc = c_usleep(100*1000)
             end if
         end subroutine print_ok_mark
 
@@ -443,6 +444,20 @@ module helper
                     write(*, '(I19)', advance='no') load_balance_num_step
                     call print_ok_mark(ierr=0)
                 end if
+
+            case('load_balance_extent')
+                write(*, '(A30)', advance='no') '  Load balancing extent [0, 1]:'
+                !> load balance step must greater than 0
+                if ((load_balance_extent < 0).or.(load_balance_extent > 1)) then
+                    write(*, '(ES19.2)', advance='no') load_balance_extent
+                    call print_ok_mark(ierr=1)
+                    stop
+                else 
+                    num_auxi_per_procs = num_auxi_per_procs + nint(100.d0*load_balance_extent)
+                    write(*, '(ES19.2)', advance='no') load_balance_extent
+                    call print_ok_mark(ierr=0)
+                end if
+
 
             case('x_min')
                 write(*, '(A30)', advance='no') '  x_min of the system:        '
@@ -629,7 +644,7 @@ module helper
             write(*, '(A)', advance='no') '  '
             do i = 1, length
                 write(*, '(A)', advance='no') target
-                rc = c_usleep(20*1000)
+                rc = c_usleep(10*1000)
             end do
             write(*, '(A)') target
         end subroutine print_divider
