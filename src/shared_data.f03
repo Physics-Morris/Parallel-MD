@@ -47,6 +47,7 @@ module shared_data
     integer, allocatable        :: auxi_cell_new(:, :, :, :)
     !> if load balance extent=0, use 10 auxi per processor
     integer                     :: num_auxi_per_procs=10
+    integer                     :: max_num_auxi_per_procs=100
     integer                     :: auxi_num_x, auxi_num_y, auxi_num_z
     double precision            :: auxi_cell_wx, auxi_cell_wy, auxi_cell_wz
 

@@ -453,7 +453,8 @@ module helper
                     call print_ok_mark(ierr=1)
                     stop
                 else 
-                    num_auxi_per_procs = num_auxi_per_procs + nint(100.d0*load_balance_extent)
+                    num_auxi_per_procs = num_auxi_per_procs + &
+                                         nint(max_num_auxi_per_procs*load_balance_extent)
                     write(*, '(ES19.2)', advance='no') load_balance_extent
                     call print_ok_mark(ierr=0)
                 end if

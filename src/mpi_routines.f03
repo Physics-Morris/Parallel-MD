@@ -468,6 +468,7 @@ module mpi_routines
         !> x location of the cut for particular (z, y) procs
         integer                     :: x_slice(numprocs_z, numprocs_y, numprocs_x-1)
 
+        allocate(auxi_cell_new(auxi_num_x, auxi_num_y, auxi_num_z, 5), stat=ierr)
 
         num_z_slice = numprocs_z-1
         num_y_slice = numprocs_y-1
@@ -485,14 +486,15 @@ module mpi_routines
             call get_dlb_slice_xyz(z_slice, y_slice, x_slice)
 
             !3> create new auxi cell accroding to the slice we found
-            allocate(auxi_cell_new(auxi_num_x, auxi_num_y, auxi_num_z, 5), stat=ierr)
             call update_auxi_cell(z_slice, y_slice, x_slice, ierr)
-            deallocate(auxi_cell_new, stat=ierr)
         end if
 
         !4> Redistribute particle
+        call mpi_bcast(auxi_cell_new, num_z_slice*num_y_slice*num_x_slice*5, &
+                       mpi_integer, master_id, cart_comm_3d, ierr)
+        call dlb_redistribute_particles(ierr)
 
-
+        deallocate(auxi_cell_new, stat=ierr)
     end subroutine dynamics_load_balance
 
 
@@ -742,6 +744,13 @@ module mpi_routines
         end do
         ierr = 0
     end subroutine update_auxi_cell
+
+
+    !> redistribute particles accroding to auxi_cell_new
+    subroutine dlb_redistribute_particles(ierr)
+        implicit none
+        integer, intent(out) :: ierr
+    end subroutine dlb_redistribute_particles
 
 
 end module mpi_routines

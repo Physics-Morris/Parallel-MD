@@ -1,6 +1,6 @@
 FC=mpif90
 FFLAGS=-O -fopenmp -std=f2003 -g -Wall -fbounds-check -fall-intrinsics -Wextra -pedantic-errors \
- 	   -fcheck=all -fbacktrace -Wunderflow -ffpe-trap=zero,overflow,underflow
+ 	   -fcheck=all -fbacktrace -Wunderflow -ffpe-trap=zero,overflow,underflow -mcmodel=medium
 
 SRC = constants.f03 math.f03 shared_data.f03 error_handle.f03 particle.f03 helper.f03 \
       diagnostics.f03 mpi_routines.f03 md.f03
