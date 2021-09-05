@@ -15,6 +15,11 @@ module helper
 
     namelist / particles_block / &
     total_particles, particle_mass, particle_charge, particle_distribution, &
+    slab_xmin, slab_xmax, slab_ymin, slab_ymax, slab_zmin, slab_zmax, &
+    slab1_xmin, slab1_xmax, slab1_ymin, slab1_ymax, slab1_zmin, slab1_zmax, &
+    slab2_xmin, slab2_xmax, slab2_ymin, slab2_ymax, slab2_zmin, slab2_zmax, &
+    sphere_center_x, sphere_center_y, sphere_center_z, sphere_radius, &
+    FWHM_x, FWHM_y, FWHM_z, slab_center_x, slab_center_y, slab_center_z, &
     velocity_distribution, particle_temp_x, particle_temp_y, particle_temp_z, &
     part_boundary_x, part_boundary_y, part_boundary_z
 
@@ -566,6 +571,38 @@ module helper
                 write(*, '(A30, A, A)', advance='no')    '  Particle distribution:      ', &
                 repeat(' ', default_length-len(trim(particle_distribution))), trim(particle_distribution)
                 call print_ok_mark(ierr=0)
+                if (particle_distribution == 'uniform_sphere') then
+                    write(*, '(A30, ES19.2)', advance='no')    '  Sphere Center x:            ', &
+                    sphere_center_x
+                    if ((sphere_center_x >= x_min).and.(sphere_center_x <= x_max)) then
+                        call print_ok_mark(ierr=0)
+                    else
+                        call print_ok_mark(ierr=1)
+                    end if
+                    write(*, '(A30, ES19.2)', advance='no')    '  Sphere Center y:            ', &
+                    sphere_center_y
+                    if ((sphere_center_y >= y_min).and.(sphere_center_y <= y_max)) then
+                        call print_ok_mark(ierr=0)
+                    else
+                        call print_ok_mark(ierr=1)
+                    end if
+                    write(*, '(A30, ES19.2)', advance='no')    '  Sphere Center z:            ', &
+                    sphere_center_z
+                    if ((sphere_center_z >= z_min).and.(sphere_center_z <= z_max)) then
+                        call print_ok_mark(ierr=0)
+                    else
+                        call print_ok_mark(ierr=1)
+                    end if
+                    write(*, '(A30, ES19.2)', advance='no')    '  Sphere Radius:              ', &
+                    sphere_radius
+                    if ((sphere_center_x+sphere_radius>x_max).or.(sphere_center_x-sphere_radius<x_min).or.&
+                        (sphere_center_y+sphere_radius>y_max).or.(sphere_center_y-sphere_radius<y_min).or.&
+                        (sphere_center_z+sphere_radius>z_max).or.(sphere_center_z-sphere_radius<z_min)) then
+                        call print_ok_mark(ierr=1)
+                    else
+                        call print_ok_mark(ierr=0)
+                    end if
+                end if
 
             case('particle_velocity_distribution')
                 write(*, '(A30, A, A)', advance='no')    '  Velocity distribution:      ', &

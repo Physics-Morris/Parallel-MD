@@ -37,6 +37,8 @@ module shared_data
     integer                     :: numprocs_x, numprocs_y, numprocs_z
     !> custome initial number of processor in each direction
     integer                     :: init_numprocs_x, init_numprocs_y, init_numprocs_z
+
+
     !> load balance option
     logical                     :: load_balance
     integer                     :: load_balance_num_step
@@ -50,5 +52,19 @@ module shared_data
     integer                     :: max_num_auxi_per_procs=100
     integer                     :: auxi_num_x, auxi_num_y, auxi_num_z
     double precision            :: auxi_cell_wx, auxi_cell_wy, auxi_cell_wz
+
+    
+    !> initial distribution options parameter
+    double precision            :: slab_xmin, slab_ymin, slab_zmin
+    double precision            :: slab_xmax, slab_ymax, slab_zmax
+    double precision            :: slab1_xmin, slab1_ymin, slab1_zmin
+    double precision            :: slab1_xmax, slab1_ymax, slab1_zmax
+    double precision            :: slab2_xmin, slab2_ymin, slab2_zmin
+    double precision            :: slab2_xmax, slab2_ymax, slab2_zmax
+    double precision            :: sphere_center_x, sphere_center_y, sphere_center_z
+    double precision            :: sphere_radius
+    double precision            :: FWHM_x, FWHM_y, FWHM_z
+    double precision            :: slab_center_x, slab_center_y, slab_center_z
+
 
 end module shared_data

@@ -109,6 +109,7 @@ module particle
         integer                :: i
         integer, allocatable   :: seed(:)
         integer                :: n, clock, j
+        double precision       :: trial_x, trial_y, trial_z
         
         !> first allocate global particle list
         allocate(global_part_list(total_particles), stat=ierr)
@@ -137,6 +138,56 @@ module particle
                 global_part_list(i) % pos_z = uniform_distribution(z_min, z_max)
             end do
 
+        else if (particle_distribution == 'uniform_slab') then
+            do i = 1, total_particles
+                global_part_list(i) % pos_x = uniform_distribution(slab_xmin, slab_xmax)
+                global_part_list(i) % pos_y = uniform_distribution(slab_ymin, slab_ymax)
+                global_part_list(i) % pos_z = uniform_distribution(slab_zmin, slab_zmax)
+            end do
+
+        else if (particle_distribution == 'gaussian_slab') then
+            do i = 1, total_particles
+                do 
+                    trial_x = gaussian_distribution(slab_center_x, FWHM_x*fwhm2sigma)
+                    trial_y = gaussian_distribution(slab_center_y, FWHM_y*fwhm2sigma)
+                    trial_z = gaussian_distribution(slab_center_z, FWHM_z*fwhm2sigma)
+                    if ((trial_x>=x_min).and.(trial_x<=x_max).and.(trial_y>=y_min).and.&
+                        (trial_y<=y_max).and.(trial_z>=z_min).and.(trial_z<=z_max)) then
+                            exit
+                    end if
+                end do
+                global_part_list(i) % pos_x = trial_x
+                global_part_list(i) % pos_y = trial_y
+                global_part_list(i) % pos_z = trial_z
+            end do
+
+        else if (particle_distribution == 'double_uniform_slab') then
+            do i = 1, total_particles/2
+                global_part_list(i) % pos_x = uniform_distribution(slab1_xmin, slab1_xmax)
+                global_part_list(i) % pos_y = uniform_distribution(slab1_ymin, slab1_ymax)
+                global_part_list(i) % pos_z = uniform_distribution(slab1_zmin, slab1_zmax)
+            end do
+            do i = total_particles/2+1, total_particles
+                global_part_list(i) % pos_x = uniform_distribution(slab2_xmin, slab2_xmax)
+                global_part_list(i) % pos_y = uniform_distribution(slab2_ymin, slab2_ymax)
+                global_part_list(i) % pos_z = uniform_distribution(slab2_zmin, slab2_zmax)
+            end do
+
+        else if (particle_distribution == 'uniform_sphere') then
+            do i = 1, total_particles
+                do
+                    trial_x = uniform_distribution(-sphere_radius, sphere_radius)
+                    trial_y = uniform_distribution(-sphere_radius, sphere_radius)
+                    trial_z = uniform_distribution(-sphere_radius, sphere_radius)
+                    if (dsqrt(trial_x**2+trial_y**2+trial_z**2) <= sphere_radius) then
+                            exit
+                    end if
+                end do
+                global_part_list(i) % pos_x = sphere_center_x + trial_x
+                global_part_list(i) % pos_y = sphere_center_y + trial_y
+                global_part_list(i) % pos_z = sphere_center_z + trial_z
+            end do
+
         else if (particle_distribution == 'custom') then
             !>
             ! use custom fucntion locate in user_custom directory
@@ -160,6 +211,30 @@ module particle
                 global_part_list(i) % vel_y = maxwell_boltzmann(particle_temp_y, particle_mass)
                 global_part_list(i) % vel_z = maxwell_boltzmann(particle_temp_z, particle_mass)
             end do
+        else if (velocity_distribution == 'cold_xy_maxwell_z') then
+                global_part_list(i) % vel_x = 0.d0
+                global_part_list(i) % vel_y = 0.d0
+                global_part_list(i) % vel_z = maxwell_boltzmann(particle_temp_z, particle_mass)
+        else if (velocity_distribution == 'cold_xz_maxwell_y') then
+                global_part_list(i) % vel_x = 0.d0
+                global_part_list(i) % vel_y = maxwell_boltzmann(particle_temp_y, particle_mass)
+                global_part_list(i) % vel_z = 0.d0
+        else if (velocity_distribution == 'cold_yz_maxwell_x') then
+                global_part_list(i) % vel_x = maxwell_boltzmann(particle_temp_x, particle_mass)
+                global_part_list(i) % vel_y = 0.d0
+                global_part_list(i) % vel_z = 0.d0
+        else if (velocity_distribution == 'cold_x_maxwell_yz') then
+                global_part_list(i) % vel_x = 0.d0
+                global_part_list(i) % vel_y = maxwell_boltzmann(particle_temp_y, particle_mass)
+                global_part_list(i) % vel_z = maxwell_boltzmann(particle_temp_z, particle_mass)
+        else if (velocity_distribution == 'cold_y_maxwell_xz') then
+                global_part_list(i) % vel_x = maxwell_boltzmann(particle_temp_x, particle_mass)
+                global_part_list(i) % vel_y = 0.d0
+                global_part_list(i) % vel_z = maxwell_boltzmann(particle_temp_z, particle_mass)
+        else if (velocity_distribution == 'cold_z_maxwell_xy') then
+                global_part_list(i) % vel_x = maxwell_boltzmann(particle_temp_x, particle_mass)
+                global_part_list(i) % vel_y = maxwell_boltzmann(particle_temp_y, particle_mass)
+                global_part_list(i) % vel_z = 0.d0
         else
             write(*, *) ' unrecongnized option for velocity distribution'
             stop

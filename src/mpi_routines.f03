@@ -467,6 +467,9 @@ module mpi_routines
         integer                     :: y_slice(numprocs_z, numprocs_y-1)
         !> x location of the cut for particular (z, y) procs
         integer                     :: x_slice(numprocs_z, numprocs_y, numprocs_x-1)
+        integer                     :: total_auxi
+
+        total_auxi = auxi_num_x*auxi_num_y*auxi_num_z
 
         allocate(auxi_cell_new(auxi_num_x, auxi_num_y, auxi_num_z, 5), stat=ierr)
 
@@ -490,7 +493,8 @@ module mpi_routines
         end if
 
         !4> Redistribute particle
-        call mpi_bcast(auxi_cell_new, num_z_slice*num_y_slice*num_x_slice*5, &
+        auxi_cell_new(:, :, :, 5) = auxi_cell(:, :, :, 5)
+        call mpi_bcast(auxi_cell_new(:, :, :, :), total_auxi*5, &
                        mpi_integer, master_id, cart_comm_3d, ierr)
         call dlb_redistribute_particles(ierr)
 
@@ -526,10 +530,9 @@ module mpi_routines
         !> after caluclate locally master collect all the data from procs in to auxi_cell
         auxi_cell(:, :, :, 5) = 0
         total_auxi = auxi_num_x * auxi_num_y * auxi_num_z
-        call mpi_reduce(local_num, auxi_cell(:, :, :, 5), total_auxi, mpi_integer, &
-                        mpi_sum, master_id, cart_comm_3d, ierr)
+        call mpi_allreduce(local_num, auxi_cell(:, :, :, 5), total_auxi, mpi_integer, &
+                           mpi_sum, cart_comm_3d, ierr)
         deallocate(local_num)
-        call mpi_barrier(cart_comm_3d, ierr)
     end subroutine get_auxi_cell_part_num
     
 
@@ -734,7 +737,7 @@ module mpi_routines
                         x_end = x_slice(procs_z, procs_y, procs_x) - 1
                     end if
 
-                    procs_id = (procs_x-1) * numprocs_y * numprocs_z + (procs_y-1) * numprocs_z + (procs_x-1)
+                    procs_id = (procs_x-1) * numprocs_y * numprocs_z + (procs_y-1) * numprocs_z + (procs_z-1)
                     auxi_cell_new(x_start:x_end, y_start:y_end, z_start:z_end, 1) = procs_x
                     auxi_cell_new(x_start:x_end, y_start:y_end, z_start:z_end, 2) = procs_y
                     auxi_cell_new(x_start:x_end, y_start:y_end, z_start:z_end, 3) = procs_z
@@ -750,6 +753,32 @@ module mpi_routines
     subroutine dlb_redistribute_particles(ierr)
         implicit none
         integer, intent(out) :: ierr
+        integer              :: local_particles_new
+        integer              :: i, j, k
+
+        call mpi_comm_rank(cart_comm_3d, my_id, ierr)
+
+        !> count new local particle number
+        local_particles_new = 0
+        do i = 1, auxi_num_x
+            do j = 1, auxi_num_y
+                do k = 1, auxi_num_z
+                    if (auxi_cell_new(i, j, k, 4) == my_id) then
+                        local_particles_new = local_particles_new + &
+                                              auxi_cell_new(i, j, k, 5)
+                    end if
+                end do
+            end do
+        end do
+        write(*, *) my_id, local_particles, local_particles_new
+        !> create enough space for all particle
+
+        !> put the particle that doesn't need to redsitribute into the list
+
+        !> start to move the particles to desitination
+
+        !> after complete redistribute particle, update new local particle list
+
     end subroutine dlb_redistribute_particles
 
 
