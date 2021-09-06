@@ -1,8 +1,8 @@
 &basics_block
 sim_dimension = 3
-init_numprocs_x=3
-init_numprocs_y=4
-init_numprocs_z=3
+init_numprocs_x=4
+init_numprocs_y=3
+init_numprocs_z=2
 load_balance=.true.
 load_balance_num_step=100
 load_balance_extent=0.5
@@ -18,7 +18,11 @@ z_max = 100
 total_particles = 10000
 particle_mass = 1
 particle_charge = 1
-particle_distribution = 'uniform_in_domain'
+particle_distribution = 'uniform_sphere'
+sphere_center_x = 50
+sphere_center_y = 50
+sphere_center_z = 50
+sphere_radius = 40
 velocity_distribution = 'maxwell_xyz'
 particle_temp_x = 1
 particle_temp_y = 1

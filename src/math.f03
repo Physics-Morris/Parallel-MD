@@ -17,7 +17,7 @@ module math
             end if
             call random_number(a)
             width = vmax - vmin
-            vc = (vmax - vmin) / 2.d0
+            vc = (vmax + vmin) / 2.d0
             a = (a - 0.5d0) * width
             uniform_distribution = a + vc
         end function uniform_distribution

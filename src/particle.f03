@@ -25,22 +25,37 @@ module particle
         procedure :: rest_energy => calculate_rest_energy
         procedure :: momentum => calculate_momentum
         procedure :: initialize => initialize_particle
+        procedure :: which_auxi_cell => which_auxi_cell
     end type particle_type
 
 
     !> the list that store global partarticle and local ones
     type(particle_type), dimension(:), allocatable :: global_part_list
     type(particle_type), dimension(:), allocatable :: local_part_list
+    type(particle_type), dimension(:), allocatable :: local_part_list_new
 
 
     contains
+
+
+    !> caluclate the auxi cell particle in (index start from 1)
+    function which_auxi_cell(this) result(cell_index)
+        implicit none
+        class(particle_type), intent(in) :: this
+        integer :: cell_index(3), cell_x, cell_y, cell_z
+        cell_x = floor((this%pos_x - x_min) / auxi_cell_wx) + 1
+        cell_y = floor((this%pos_y - y_min) / auxi_cell_wy) + 1
+        cell_z = floor((this%pos_z - z_min) / auxi_cell_wz) + 1
+        cell_index = (/ cell_x, cell_y, cell_z /)
+    end function which_auxi_cell
+
 
     !> caluclate speed of particle
     function calculate_speed(this) result(speed)
         implicit none
         class(particle_type), intent(in) :: this
         double precision :: speed
-            speed = dsqrt(this%vel_x**2 + this%vel_y**2 + this%vel_z**2)
+        speed = dsqrt(this%vel_x**2 + this%vel_y**2 + this%vel_z**2)
     end function calculate_speed
 
 
