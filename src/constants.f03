@@ -16,6 +16,8 @@ module constants
     !> h_bar = h_planck / 2.0_num / pi
     double precision, parameter :: h_bar = 1.054571725336289397963133257349698d-34
 
+    !> FWHM = 2(2ln(2)) * sigma
+    double precision, parameter :: fwhm2sigma=1.d0/2.d0*dsqrt(2.d0*log(2.d0))
 
     !> master process id
     integer, parameter          :: master_id = 0

@@ -137,7 +137,7 @@ module mpi_routines
         integer                :: loc(3)
         integer                :: count(1:numprocs_x, 1:numprocs_y, 1:numprocs_z)
         integer                :: dest
-        integer                :: status(MPI_STATUS_SIZE)
+        integer                :: status(mpi_status_size)
         
         !> get processor cartesian coordinate
         call mpi_cart_get(cart_comm_3d, 3, dims, isperiodic, coords, ierr)
@@ -467,6 +467,9 @@ module mpi_routines
         integer                     :: y_slice(numprocs_z, numprocs_y-1)
         !> x location of the cut for particular (z, y) procs
         integer                     :: x_slice(numprocs_z, numprocs_y, numprocs_x-1)
+        integer                     :: total_auxi
+
+        total_auxi = auxi_num_x*auxi_num_y*auxi_num_z
 
         allocate(auxi_cell_new(auxi_num_x, auxi_num_y, auxi_num_z, 5), stat=ierr)
 
@@ -490,7 +493,8 @@ module mpi_routines
         end if
 
         !4> Redistribute particle
-        call mpi_bcast(auxi_cell_new, num_z_slice*num_y_slice*num_x_slice*5, &
+        auxi_cell_new(:, :, :, 5) = auxi_cell(:, :, :, 5)
+        call mpi_bcast(auxi_cell_new(:, :, :, :), total_auxi*5, &
                        mpi_integer, master_id, cart_comm_3d, ierr)
         call dlb_redistribute_particles(ierr)
 
@@ -526,10 +530,9 @@ module mpi_routines
         !> after caluclate locally master collect all the data from procs in to auxi_cell
         auxi_cell(:, :, :, 5) = 0
         total_auxi = auxi_num_x * auxi_num_y * auxi_num_z
-        call mpi_reduce(local_num, auxi_cell(:, :, :, 5), total_auxi, mpi_integer, &
-                        mpi_sum, master_id, cart_comm_3d, ierr)
+        call mpi_allreduce(local_num, auxi_cell(:, :, :, 5), total_auxi, mpi_integer, &
+                           mpi_sum, cart_comm_3d, ierr)
         deallocate(local_num)
-        call mpi_barrier(cart_comm_3d, ierr)
     end subroutine get_auxi_cell_part_num
     
 
@@ -734,7 +737,7 @@ module mpi_routines
                         x_end = x_slice(procs_z, procs_y, procs_x) - 1
                     end if
 
-                    procs_id = (procs_x-1) * numprocs_y * numprocs_z + (procs_y-1) * numprocs_z + (procs_x-1)
+                    procs_id = (procs_x-1) * numprocs_y * numprocs_z + (procs_y-1) * numprocs_z + (procs_z-1)
                     auxi_cell_new(x_start:x_end, y_start:y_end, z_start:z_end, 1) = procs_x
                     auxi_cell_new(x_start:x_end, y_start:y_end, z_start:z_end, 2) = procs_y
                     auxi_cell_new(x_start:x_end, y_start:y_end, z_start:z_end, 3) = procs_z
@@ -749,7 +752,119 @@ module mpi_routines
     !> redistribute particles accroding to auxi_cell_new
     subroutine dlb_redistribute_particles(ierr)
         implicit none
-        integer, intent(out) :: ierr
+        integer, intent(out)  :: ierr
+        integer               :: local_particles_new
+        integer               :: i, j, k
+        integer               :: part_auxi(3), part_not_moving
+        integer               :: send_part, recv_part
+        integer               :: num_send, num_recv
+        integer               :: dest
+        integer, allocatable  :: status(:, :)
+        ! integer, allocatable  :: status(:)
+        integer, allocatable  :: requests(:)
+        ! integer               :: status(mpi_status_size)
+        ! integer               :: requests
+
+        call mpi_comm_rank(cart_comm_3d, my_id, ierr)
+
+        !> count new local particle number
+        local_particles_new = 0
+        do i = 1, auxi_num_x
+            do j = 1, auxi_num_y
+                do k = 1, auxi_num_z
+                    if (auxi_cell_new(i, j, k, 4) == my_id) then
+                        local_particles_new = local_particles_new + &
+                                              auxi_cell_new(i, j, k, 5)
+                    end if
+                end do
+            end do
+        end do
+
+        !> create enough space for all particle
+        allocate(local_part_list_new(local_particles_new))
+
+        !> put the particle that doesn't need to redsitribute into the list
+        part_not_moving = 0
+        do i = 1, local_particles
+            part_auxi = which_auxi_cell(local_part_list(i))
+            dest = auxi_cell_new(part_auxi(1), part_auxi(2), part_auxi(3), 4) 
+            if (dest == my_id) then
+                part_not_moving = part_not_moving + 1
+                local_part_list_new(part_not_moving) = local_part_list(i)
+            end if
+        end do
+
+        !> start to move the particles to desitination
+        send_part = local_particles - part_not_moving
+        recv_part = local_particles_new - part_not_moving
+        num_send = 0
+        ! num_recv = 0
+
+        allocate(status(mpi_status_size, recv_part))
+        ! allocate(status(mpi_status_size))
+        allocate(requests(recv_part))
+
+
+        do num_recv = 1, recv_part
+            call mpi_irecv(local_part_list_new(part_not_moving+num_recv), 1, particle_struc, &
+                           mpi_any_source, mpi_any_tag, cart_comm_3d, requests(num_recv), ierr)
+        end do
+        do i = 1, local_particles
+            part_auxi = which_auxi_cell(local_part_list(i))
+            dest = auxi_cell_new(part_auxi(1), part_auxi(2), part_auxi(3), 4) 
+            if ( dest /= my_id) then
+                call mpi_send(local_part_list(i), 1, particle_struc, dest, &
+                              my_id, cart_comm_3d, ierr)
+            end if
+        end do
+        call mpi_waitall(recv_part, requests, status, ierr)
+
+
+        ! do i = 1, local_particles
+        !     part_auxi = which_auxi_cell(local_part_list(i))
+        !     dest = auxi_cell_new(part_auxi(1), part_auxi(2), part_auxi(3), 4) 
+        !     if ( dest /= my_id) then
+        !         num_send = num_send + 1
+        !         ! num_recv = num_recv + 1
+        !         call mpi_isend(local_part_list(i), 1, particle_struc, dest, &
+        !                        my_id, cart_comm_3d, requests(num_send), ierr)
+        !         ! call mpi_wait(requests(num_send), status, ierr)
+        !         ! write(*, *) my_id, send_part-num_send, send_part
+        !         ! call mpi_sendrecv(local_part_list(i), 1, particle_struc, dest, &
+        !         !                   my_id, local_part_list_new(part_not_moving+num_recv), &
+        !         !                   1, particle_struc, my_id, mpi_any_tag, cart_comm_3d, status)
+        !     end if
+        ! end do
+
+        ! call mpi_waitall(send_part, requests, status, ierr)
+        ! call mpi_barrier(cart_comm_3d, ierr)
+
+        ! write(*, *) my_id, recv_part
+        ! ! do num_recv = 1, recv_part
+        ! if(recv_part >= 1) then
+        ! do num_recv = 1, 1
+        !     ! if (my_id == 0) then
+        !     write(*, *) my_id, num_recv, recv_part, part_not_moving+num_recv, local_particles_new
+        !     ! end if
+        !     ! call mpi_recv(local_part_list_new(part_not_moving+num_recv), 1, particle_struc, &
+        !     !               mpi_any_source, mpi_any_tag, cart_comm_3d, ierr)
+        !     call mpi_recv(local_part_list_new(num_recv), 1, particle_struc, &
+        !                   mpi_any_source, mpi_any_tag, cart_comm_3d, ierr)
+        ! end do
+        ! end if
+
+
+        !> update new local particles number
+        local_particles = local_particles_new
+
+        !> transfer new local particle list
+        deallocate(local_part_list)
+        allocate(local_part_list(local_particles))
+        local_part_list = local_part_list_new
+        
+        !> and free temporary list
+        deallocate(local_part_list_new)
+
     end subroutine dlb_redistribute_particles
 
 
