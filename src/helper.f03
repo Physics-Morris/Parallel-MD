@@ -3,6 +3,7 @@ module helper
     use mpi
     use constants
     use math
+    use omp_lib
     use, intrinsic :: iso_c_binding, only: c_int, c_int32_t
     implicit none
 
@@ -10,11 +11,17 @@ module helper
     namelist / basics_block / &
     sim_dimension, x_min, x_max, y_min, y_max, z_min, z_max, &
     init_numprocs_x, init_numprocs_y, init_numprocs_z, load_balance, &
-    load_balance_num_step
+    load_balance_num_step, load_balance_extent
 
     namelist / particles_block / &
     total_particles, particle_mass, particle_charge, particle_distribution, &
-    velocity_distribution, particle_temp_x, particle_temp_y, particle_temp_z
+    slab_xmin, slab_xmax, slab_ymin, slab_ymax, slab_zmin, slab_zmax, &
+    slab1_xmin, slab1_xmax, slab1_ymin, slab1_ymax, slab1_zmin, slab1_zmax, &
+    slab2_xmin, slab2_xmax, slab2_ymin, slab2_ymax, slab2_zmin, slab2_zmax, &
+    sphere_center_x, sphere_center_y, sphere_center_z, sphere_radius, &
+    FWHM_x, FWHM_y, FWHM_z, slab_center_x, slab_center_y, slab_center_z, &
+    velocity_distribution, particle_temp_x, particle_temp_y, particle_temp_z, &
+    part_boundary_x, part_boundary_y, part_boundary_z
 
     namelist / output_block / &
     number_snapshots
@@ -94,6 +101,7 @@ module helper
                 call check_input_parameter('init_procs_layout')
                 call check_input_parameter('load_balance')
                 call check_input_parameter('load_balance_step')
+                call check_input_parameter('load_balance_extent')
                 call check_input_parameter('x_min')
                 call check_input_parameter('x_max')
                 call check_input_parameter('y_min')
@@ -108,6 +116,9 @@ module helper
                 call check_input_parameter('temp_x')
                 call check_input_parameter('temp_y')
                 call check_input_parameter('temp_z')
+                call check_input_parameter('part_boundary_x')
+                call check_input_parameter('part_boundary_y')
+                call check_input_parameter('part_boundary_z')
                 call check_input_parameter('number_output_snapshots')
 
                 call set_term_color(term_default_colour)
@@ -297,7 +308,8 @@ module helper
 
         subroutine successful
             implicit none
-            call sleep(1)
+            integer :: rc
+            rc = c_usleep(100*1000)
             call set_term_color(term_green)
             green_light = .True.
             write(*, *) 'Successful'
@@ -307,7 +319,8 @@ module helper
 
         subroutine failed
             implicit none
-            call sleep(1)
+            integer :: rc
+            rc = c_usleep(100*1000)
             call set_term_color(term_red)
             green_light = .False.
             write(*, *) 'Failed'
@@ -371,17 +384,17 @@ module helper
             implicit none
             integer :: ierr, rc
             if (ierr == 0) then
-                rc = c_usleep(500*1000)
+                rc = c_usleep(100*1000)
                 call set_term_color(term_green)
                 write(*, '(A3)') ' OK' 
                 call set_term_color(term_default_colour)
-                rc = c_usleep(500*1000)
+                rc = c_usleep(100*1000)
             else
-                rc = c_usleep(500*1000)
+                rc = c_usleep(100*1000)
                 call set_term_color(term_red)
                 write(*, '(A2)') ' X' 
                 call set_term_color(term_default_colour)
-                rc = c_usleep(500*1000)
+                rc = c_usleep(100*1000)
             end if
         end subroutine print_ok_mark
 
@@ -436,6 +449,21 @@ module helper
                     write(*, '(I19)', advance='no') load_balance_num_step
                     call print_ok_mark(ierr=0)
                 end if
+
+            case('load_balance_extent')
+                write(*, '(A30)', advance='no') '  Load balancing extent [0, 1]:'
+                !> load balance step must greater than 0
+                if ((load_balance_extent < 0).or.(load_balance_extent > 1)) then
+                    write(*, '(ES19.2)', advance='no') load_balance_extent
+                    call print_ok_mark(ierr=1)
+                    stop
+                else 
+                    num_auxi_per_procs = num_auxi_per_procs + &
+                                         nint(max_num_auxi_per_procs*load_balance_extent)
+                    write(*, '(ES19.2)', advance='no') load_balance_extent
+                    call print_ok_mark(ierr=0)
+                end if
+
 
             case('x_min')
                 write(*, '(A30)', advance='no') '  x_min of the system:        '
@@ -543,6 +571,38 @@ module helper
                 write(*, '(A30, A, A)', advance='no')    '  Particle distribution:      ', &
                 repeat(' ', default_length-len(trim(particle_distribution))), trim(particle_distribution)
                 call print_ok_mark(ierr=0)
+                if (particle_distribution == 'uniform_sphere') then
+                    write(*, '(A30, ES19.2)', advance='no')    '  Sphere Center x:            ', &
+                    sphere_center_x
+                    if ((sphere_center_x >= x_min).and.(sphere_center_x <= x_max)) then
+                        call print_ok_mark(ierr=0)
+                    else
+                        call print_ok_mark(ierr=1)
+                    end if
+                    write(*, '(A30, ES19.2)', advance='no')    '  Sphere Center y:            ', &
+                    sphere_center_y
+                    if ((sphere_center_y >= y_min).and.(sphere_center_y <= y_max)) then
+                        call print_ok_mark(ierr=0)
+                    else
+                        call print_ok_mark(ierr=1)
+                    end if
+                    write(*, '(A30, ES19.2)', advance='no')    '  Sphere Center z:            ', &
+                    sphere_center_z
+                    if ((sphere_center_z >= z_min).and.(sphere_center_z <= z_max)) then
+                        call print_ok_mark(ierr=0)
+                    else
+                        call print_ok_mark(ierr=1)
+                    end if
+                    write(*, '(A30, ES19.2)', advance='no')    '  Sphere Radius:              ', &
+                    sphere_radius
+                    if ((sphere_center_x+sphere_radius>x_max).or.(sphere_center_x-sphere_radius<x_min).or.&
+                        (sphere_center_y+sphere_radius>y_max).or.(sphere_center_y-sphere_radius<y_min).or.&
+                        (sphere_center_z+sphere_radius>z_max).or.(sphere_center_z-sphere_radius<z_min)) then
+                        call print_ok_mark(ierr=1)
+                    else
+                        call print_ok_mark(ierr=0)
+                    end if
+                end if
 
             case('particle_velocity_distribution')
                 write(*, '(A30, A, A)', advance='no')    '  Velocity distribution:      ', &
@@ -583,6 +643,21 @@ module helper
                     call print_ok_mark(ierr=0)
                 end if
 
+            case('part_boundary_x')
+                write(*, '(A30, A, A)', advance='no') '  Particle Boundary in x:     ', &
+                repeat(' ', default_length-len(trim(part_boundary_x))), trim(part_boundary_x)
+                call print_ok_mark(ierr=0)
+
+            case('part_boundary_y')
+                write(*, '(A30, A, A)', advance='no') '  Particle Boundary in y:     ', &
+                repeat(' ', default_length-len(trim(part_boundary_y))), trim(part_boundary_y)
+                call print_ok_mark(ierr=0)
+
+            case('part_boundary_z')
+                write(*, '(A30, A, A)', advance='no') '  Particle Boundary in z:     ', &
+                repeat(' ', default_length-len(trim(part_boundary_z))), trim(part_boundary_z)
+                call print_ok_mark(ierr=0)
+
             case('number_output_snapshots')
                 write(*, '(A30)', advance='no') '  Number of output snapshots: '
                 !> number of snapshot(s) must >= 0 (0 for no output)
@@ -607,7 +682,7 @@ module helper
             write(*, '(A)', advance='no') '  '
             do i = 1, length
                 write(*, '(A)', advance='no') target
-                rc = c_usleep(20*1000)
+                rc = c_usleep(10*1000)
             end do
             write(*, '(A)') target
         end subroutine print_divider
