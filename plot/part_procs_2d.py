@@ -17,7 +17,7 @@ plt.rcParams['legend.fontsize'] = 13
 plt.rcParams['mathtext.fontset'] = 'stix'
 plt.rcParams['axes.linewidth'] = 1
 
-plt.style.use('dark_background')
+# plt.style.use('dark_background')
 
 colors = cm.get_cmap('tab20', 6)
 
@@ -38,8 +38,8 @@ ax.xaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
 ax.yaxis.set_major_locator(mpl.ticker.MultipleLocator(20))
 ax.yaxis.set_minor_locator(mpl.ticker.MultipleLocator(5))
 
-hdf_start = 0
-hdf_end = 0
+hdf_start = 1
+hdf_end = 1
 file_dir = '../data/'
 for i in range(hdf_start, hdf_end+1):
     # open file
@@ -63,5 +63,5 @@ ax.set_xlabel('$x$')
 ax.set_ylabel('$y$')
 ax.set_aspect('equal')
 plt.tight_layout()
-# plt.savefig('figures/uniform_procs_layout_2d_light.png', dpi=1000)
-plt.savefig('figures/uniform_procs_layout_2d_dark.png', dpi=1000, transparent=True)
+plt.savefig('figures/uniform_procs_layout_2d_light.png', dpi=1000)
+# plt.savefig('figures/uniform_procs_layout_2d_dark.png', dpi=1000, transparent=True)

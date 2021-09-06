@@ -1,0 +1,1 @@
+/opt/ohpc/Taiwania3/pkg/intel/2020/compilers_and_libraries_2020.4.304/linux/mpi/intel64/bin/mpiifort   -f77rtl -O3 CMakeFiles/hello.dir/src/hello.f90.o  -o hello 
