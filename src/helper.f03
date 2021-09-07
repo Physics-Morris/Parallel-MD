@@ -93,7 +93,7 @@ module helper
 
             if (status == 'full') then
                 call print_empty_line(2)
-                call print_divider('-', 49)
+                call print_divider('-', 55)
 
                 call set_term_color(term_default_colour)
 
@@ -122,7 +122,7 @@ module helper
                 call check_input_parameter('number_output_snapshots')
 
                 call set_term_color(term_default_colour)
-                call print_divider('-', 49)
+                call print_divider('-', 55)
                 call print_empty_line(2)
             end if
         end subroutine print_simulation_parameter
@@ -403,7 +403,7 @@ module helper
             implicit none
             character(len=*), intent(in)  :: name
             double precision              :: acpt_range=1.d-5
-            integer                       :: default_length=19
+            integer                       :: default_length=25
 
             select case (name)
 
@@ -411,10 +411,10 @@ module helper
                 !> currently only support 3d
                 write(*, '(A30)', advance='no') '  Simulation dimension:       '
                 if (sim_dimension == 3) then
-                    write(*, '(I19)', advance='no') sim_dimension
+                    write(*, '(I25)', advance='no') sim_dimension
                     call print_ok_mark(ierr=0)
                 else 
-                    write(*, '(I19)', advance='no') sim_dimension
+                    write(*, '(I25)', advance='no') sim_dimension
                     call print_ok_mark(ierr=1)
                     stop
                 end if
@@ -424,8 +424,8 @@ module helper
                 call mpi_comm_size(mpi_comm_world, numprocs, ierr)
                 write(*, '(A35)', advance='no') '  Initial proccesor layout:        '
                 if (init_numprocs_x*init_numprocs_y*init_numprocs_z == numprocs) then
-                    write(*, '(A2, I2, A2, I2, A2, I2, A2)', advance='no') &
-                    '[', init_numprocs_x, 'x', init_numprocs_y, 'x', init_numprocs_z, ']'
+                    write(*, '(A6, A2, I2, A2, I2, A2, I2, A2)', advance='no') &
+                    '      ', '[', init_numprocs_x, 'x', init_numprocs_y, 'x', init_numprocs_z, ']'
                     call print_ok_mark(ierr=0)
                 else 
                     write(*, '(A2, I2, A2, I2, A2, I2, A2)', advance='no') &
@@ -435,18 +435,18 @@ module helper
                 end if
 
             case('load_balance')
-                write(*, '(A30, L19)', advance='no')     '  Load balancing:             ', load_balance
+                write(*, '(A30, L25)', advance='no')     '  Load balancing:             ', load_balance
                 call print_ok_mark(ierr=0)
 
             case('load_balance_step')
                 write(*, '(A30)', advance='no') '  Load balancing every (step):'
                 !> load balance step must greater than 0
                 if ((load_balance .eqv. .true.).and.(load_balance_num_step <= 0)) then
-                    write(*, '(I19)', advance='no') load_balance_num_step
+                    write(*, '(I25)', advance='no') load_balance_num_step
                     call print_ok_mark(ierr=1)
                     stop
                 else 
-                    write(*, '(I19)', advance='no') load_balance_num_step
+                    write(*, '(I25)', advance='no') load_balance_num_step
                     call print_ok_mark(ierr=0)
                 end if
 
@@ -454,13 +454,13 @@ module helper
                 write(*, '(A30)', advance='no') '  Load balancing extent [0, 1]:'
                 !> load balance step must greater than 0
                 if ((load_balance_extent < 0).or.(load_balance_extent > 1)) then
-                    write(*, '(ES19.2)', advance='no') load_balance_extent
+                    write(*, '(ES25.2)', advance='no') load_balance_extent
                     call print_ok_mark(ierr=1)
                     stop
                 else 
                     num_auxi_per_procs = num_auxi_per_procs + &
                                          nint(max_num_auxi_per_procs*load_balance_extent)
-                    write(*, '(ES19.2)', advance='no') load_balance_extent
+                    write(*, '(ES25.2)', advance='no') load_balance_extent
                     call print_ok_mark(ierr=0)
                 end if
 
@@ -468,68 +468,68 @@ module helper
             case('x_min')
                 write(*, '(A30)', advance='no') '  x_min of the system:        '
                 if (x_min >= x_max) then
-                    write(*, '(ES19.2)', advance='no') x_min
+                    write(*, '(ES25.2)', advance='no') x_min
                     call print_ok_mark(ierr=1)
                 else 
-                    write(*, '(ES19.2)', advance='no') x_min
+                    write(*, '(ES25.2)', advance='no') x_min
                     call print_ok_mark(ierr=0)
                 end if
 
             case('x_max')
                 write(*, '(A30)', advance='no') '  x_max of the system:        '
                 if (x_min >= x_max) then
-                    write(*, '(ES19.2)', advance='no') x_max
+                    write(*, '(ES25.2)', advance='no') x_max
                     call print_ok_mark(ierr=1)
                     stop
                 else 
-                    write(*, '(ES19.2)', advance='no') x_max
+                    write(*, '(ES25.2)', advance='no') x_max
                     call print_ok_mark(ierr=0)
                 end if
 
             case('y_min')
                 write(*, '(A30)', advance='no') '  y_min of the system:        '
                 if (y_min >= y_max) then
-                    write(*, '(ES19.2)', advance='no') y_min
+                    write(*, '(ES25.2)', advance='no') y_min
                     call print_ok_mark(ierr=1)
                 else 
-                    write(*, '(ES19.2)', advance='no') y_min
+                    write(*, '(ES25.2)', advance='no') y_min
                     call print_ok_mark(ierr=0)
                 end if
 
             case('y_max')
                 write(*, '(A30)', advance='no') '  y_max of the system:        '
                 if (y_min >= y_max) then
-                    write(*, '(ES19.2)', advance='no') y_max
+                    write(*, '(ES25.2)', advance='no') y_max
                     call print_ok_mark(ierr=1)
                     stop
                 else 
-                    write(*, '(ES19.2)', advance='no') y_max
+                    write(*, '(ES25.2)', advance='no') y_max
                     call print_ok_mark(ierr=0)
                 end if
 
             case('z_min')
                 write(*, '(A30)', advance='no') '  z_min of the system:        '
                 if (z_min >= z_max) then
-                    write(*, '(ES19.2)', advance='no') z_min
+                    write(*, '(ES25.2)', advance='no') z_min
                     call print_ok_mark(ierr=1)
                 else 
-                    write(*, '(ES19.2)', advance='no') z_min
+                    write(*, '(ES25.2)', advance='no') z_min
                     call print_ok_mark(ierr=0)
                 end if
 
             case('z_max')
                 write(*, '(A30)', advance='no') '  z_max of the system:        '
                 if (z_min >= z_max) then
-                    write(*, '(ES19.2)', advance='no') z_max
+                    write(*, '(ES25.2)', advance='no') z_max
                     call print_ok_mark(ierr=1)
                     stop
                 else 
-                    write(*, '(ES19.2)', advance='no') z_max
+                    write(*, '(ES25.2)', advance='no') z_max
                     call print_ok_mark(ierr=0)
                 end if
 
             case('total_particles')
-                write(*, '(A30, I19)', advance='no')     '  Total number of particles:  ', total_particles
+                write(*, '(A30, I25)', advance='no')     '  Total number of particles:  ', total_particles
                 if (total_particles <= 0) then
                     call print_ok_mark(ierr=1)
                     stop
@@ -542,21 +542,21 @@ module helper
                 !> if particle mass = -1 than it is electron
                 if (abs(particle_mass+1.d0) <= acpt_range) then
                     particle_mass = m0
-                    write(*, '(ES19.2)', advance='no') particle_mass
+                    write(*, '(ES25.2)', advance='no') particle_mass
                     call print_ok_mark(ierr=0)
                 !> if particle mass = 1 than it is proton
                 else if (abs(particle_mass-1.d0) <= acpt_range) then
                     particle_mass = 1836.d0 * m0
-                    write(*, '(ES19.2)', advance='no') particle_mass
+                    write(*, '(ES25.2)', advance='no') particle_mass
                     call print_ok_mark(ierr=0)
                 !> if particle mass < -1 than is it the number of times of
                 !> the mass of electron
                 else if ((particle_mass < 0.d0).and.(abs(particle_mass+1.d0) >= acpt_range)) then
                     particle_mass = abs(particle_mass) * m0
-                    write(*, '(ES19.2)', advance='no') particle_mass
+                    write(*, '(ES25.2)', advance='no') particle_mass
                     call print_ok_mark(ierr=0)
                 else 
-                    write(*, '(ES19.2)', advance='no') particle_mass
+                    write(*, '(ES25.2)', advance='no') particle_mass
                     call print_ok_mark(ierr=0)
                 end if
 
@@ -564,7 +564,7 @@ module helper
                 write(*, '(A30)', advance='no') '  Particle charge:            '
                 !> if particle charge = -1 than it is electron
                 particle_charge = particle_charge * q0
-                write(*, '(ES19.2)', advance='no') particle_charge
+                write(*, '(ES25.2)', advance='no') particle_charge
                 call print_ok_mark(ierr=0)
         
             case('particle_distribution')
@@ -572,28 +572,28 @@ module helper
                 repeat(' ', default_length-len(trim(particle_distribution))), trim(particle_distribution)
                 call print_ok_mark(ierr=0)
                 if (particle_distribution == 'uniform_sphere') then
-                    write(*, '(A30, ES19.2)', advance='no')    '  Sphere Center x:            ', &
+                    write(*, '(A30, ES25.2)', advance='no')    '  Sphere Center x:            ', &
                     sphere_center_x
                     if ((sphere_center_x >= x_min).and.(sphere_center_x <= x_max)) then
                         call print_ok_mark(ierr=0)
                     else
                         call print_ok_mark(ierr=1)
                     end if
-                    write(*, '(A30, ES19.2)', advance='no')    '  Sphere Center y:            ', &
+                    write(*, '(A30, ES25.2)', advance='no')    '  Sphere Center y:            ', &
                     sphere_center_y
                     if ((sphere_center_y >= y_min).and.(sphere_center_y <= y_max)) then
                         call print_ok_mark(ierr=0)
                     else
                         call print_ok_mark(ierr=1)
                     end if
-                    write(*, '(A30, ES19.2)', advance='no')    '  Sphere Center z:            ', &
+                    write(*, '(A30, ES25.2)', advance='no')    '  Sphere Center z:            ', &
                     sphere_center_z
                     if ((sphere_center_z >= z_min).and.(sphere_center_z <= z_max)) then
                         call print_ok_mark(ierr=0)
                     else
                         call print_ok_mark(ierr=1)
                     end if
-                    write(*, '(A30, ES19.2)', advance='no')    '  Sphere Radius:              ', &
+                    write(*, '(A30, ES25.2)', advance='no')    '  Sphere Radius:              ', &
                     sphere_radius
                     if ((sphere_center_x+sphere_radius>x_max).or.(sphere_center_x-sphere_radius<x_min).or.&
                         (sphere_center_y+sphere_radius>y_max).or.(sphere_center_y-sphere_radius<y_min).or.&
@@ -613,33 +613,33 @@ module helper
                 write(*, '(A30)', advance='no') '  Particle Temperature in x:  '
                 !> temperature must >= 0
                 if (particle_temp_x < 0.d0) then
-                    write(*, '(ES19.2)', advance='no') particle_temp_x
+                    write(*, '(ES25.2)', advance='no') particle_temp_x
                     call print_ok_mark(ierr=1)
                     stop
                 else
-                    write(*, '(ES19.2)', advance='no') particle_temp_x
+                    write(*, '(ES25.2)', advance='no') particle_temp_x
                     call print_ok_mark(ierr=0)
                 end if
 
             case('temp_y')
                 write(*, '(A30)', advance='no') '  Particle Temperature in y:  '
                 if (particle_temp_y < 0.d0) then
-                    write(*, '(ES19.2)', advance='no') particle_temp_y
+                    write(*, '(ES25.2)', advance='no') particle_temp_y
                     call print_ok_mark(ierr=1)
                     stop
                 else
-                    write(*, '(ES19.2)', advance='no') particle_temp_y
+                    write(*, '(ES25.2)', advance='no') particle_temp_y
                     call print_ok_mark(ierr=0)
                 end if
 
             case('temp_z')
                 write(*, '(A30)', advance='no') '  Particle Temperature in z:  '
                 if (particle_temp_z < 0.d0) then
-                    write(*, '(ES19.2)', advance='no') particle_temp_z
+                    write(*, '(ES25.2)', advance='no') particle_temp_z
                     call print_ok_mark(ierr=1)
                     stop
                 else
-                    write(*, '(ES19.2)', advance='no') particle_temp_z
+                    write(*, '(ES25.2)', advance='no') particle_temp_z
                     call print_ok_mark(ierr=0)
                 end if
 
@@ -662,11 +662,11 @@ module helper
                 write(*, '(A30)', advance='no') '  Number of output snapshots: '
                 !> number of snapshot(s) must >= 0 (0 for no output)
                 if (number_snapshots < 0) then
-                    write(*, '(I19)', advance='no') number_snapshots
+                    write(*, '(I25)', advance='no') number_snapshots
                     call print_ok_mark(ierr=1)
                     stop
                 else
-                    write(*, '(I19)', advance='no') number_snapshots
+                    write(*, '(I25)', advance='no') number_snapshots
                     call print_ok_mark(ierr=0)
                 end if
 
