@@ -146,21 +146,23 @@ module particle
 
         !> first load particle position distribution accroding to
         !> density function
-        if (particle_distribution == 'uniform_in_domain') then
+        select case(particle_distribution)
+
+        case('uniform_in_domain')
             do i = 1, total_particles
                 global_part_list(i) % pos_x = uniform_distribution(x_min, x_max)
                 global_part_list(i) % pos_y = uniform_distribution(y_min, y_max)
                 global_part_list(i) % pos_z = uniform_distribution(z_min, z_max)
             end do
 
-        else if (particle_distribution == 'uniform_slab') then
+        case('uniform_slab')
             do i = 1, total_particles
                 global_part_list(i) % pos_x = uniform_distribution(slab_xmin, slab_xmax)
                 global_part_list(i) % pos_y = uniform_distribution(slab_ymin, slab_ymax)
                 global_part_list(i) % pos_z = uniform_distribution(slab_zmin, slab_zmax)
             end do
 
-        else if (particle_distribution == 'gaussian_slab') then
+        case('gaussian_xyz')
             do i = 1, total_particles
                 do 
                     trial_x = gaussian_distribution(slab_center_x, FWHM_x*fwhm2sigma)
@@ -176,7 +178,103 @@ module particle
                 global_part_list(i) % pos_z = trial_z
             end do
 
-        else if (particle_distribution == 'double_uniform_slab') then
+        case('gaussian_xy_uniform_z')
+            do i = 1, total_particles
+                do 
+                    trial_x = gaussian_distribution(slab_center_x, FWHM_x*fwhm2sigma)
+                    trial_y = gaussian_distribution(slab_center_y, FWHM_y*fwhm2sigma)
+                    trial_z = uniform_distribution(slab_zmin, slab_zmax)
+                    if ((trial_x>=x_min).and.(trial_x<=x_max).and.(trial_y>=y_min).and.&
+                        (trial_y<=y_max).and.(trial_z>=z_min).and.(trial_z<=z_max)) then
+                            exit
+                    end if
+                end do
+                global_part_list(i) % pos_x = trial_x
+                global_part_list(i) % pos_y = trial_y
+                global_part_list(i) % pos_z = trial_z
+            end do
+
+        case('gaussian_xz_uniform_y')
+            do i = 1, total_particles
+                do 
+                    trial_x = gaussian_distribution(slab_center_x, FWHM_x*fwhm2sigma)
+                    trial_y = uniform_distribution(slab_ymin, slab_ymax)
+                    trial_z = gaussian_distribution(slab_center_z, FWHM_z*fwhm2sigma)
+                    if ((trial_x>=x_min).and.(trial_x<=x_max).and.(trial_y>=y_min).and.&
+                        (trial_y<=y_max).and.(trial_z>=z_min).and.(trial_z<=z_max)) then
+                            exit
+                    end if
+                end do
+                global_part_list(i) % pos_x = trial_x
+                global_part_list(i) % pos_y = trial_y
+                global_part_list(i) % pos_z = trial_z
+            end do
+
+        case('gaussian_yz_uniform_x')
+            do i = 1, total_particles
+                do 
+                    trial_x = uniform_distribution(slab_xmin, slab_xmax)
+                    trial_y = gaussian_distribution(slab_center_y, FWHM_y*fwhm2sigma)
+                    trial_z = gaussian_distribution(slab_center_z, FWHM_z*fwhm2sigma)
+                    if ((trial_x>=x_min).and.(trial_x<=x_max).and.(trial_y>=y_min).and.&
+                        (trial_y<=y_max).and.(trial_z>=z_min).and.(trial_z<=z_max)) then
+                            exit
+                    end if
+                end do
+                global_part_list(i) % pos_x = trial_x
+                global_part_list(i) % pos_y = trial_y
+                global_part_list(i) % pos_z = trial_z
+            end do
+
+        case('gaussian_x_uniform_yz')
+            do i = 1, total_particles
+                do 
+                    trial_x = gaussian_distribution(slab_center_x, FWHM_x*fwhm2sigma)
+                    trial_y = uniform_distribution(slab_ymin, slab_ymax)
+                    trial_z = uniform_distribution(slab_zmin, slab_zmax)
+                    if ((trial_x>=x_min).and.(trial_x<=x_max).and.(trial_y>=y_min).and.&
+                        (trial_y<=y_max).and.(trial_z>=z_min).and.(trial_z<=z_max)) then
+                            exit
+                    end if
+                end do
+                global_part_list(i) % pos_x = trial_x
+                global_part_list(i) % pos_y = trial_y
+                global_part_list(i) % pos_z = trial_z
+            end do
+
+        case('gaussian_y_uniform_xz')
+            do i = 1, total_particles
+                do 
+                    trial_x = uniform_distribution(slab_xmin, slab_xmax)
+                    trial_y = gaussian_distribution(slab_center_x, FWHM_x*fwhm2sigma)
+                    trial_z = uniform_distribution(slab_zmin, slab_zmax)
+                    if ((trial_x>=x_min).and.(trial_x<=x_max).and.(trial_y>=y_min).and.&
+                        (trial_y<=y_max).and.(trial_z>=z_min).and.(trial_z<=z_max)) then
+                            exit
+                    end if
+                end do
+                global_part_list(i) % pos_x = trial_x
+                global_part_list(i) % pos_y = trial_y
+                global_part_list(i) % pos_z = trial_z
+            end do
+
+        case('gaussian_z_uniform_xy')
+            do i = 1, total_particles
+                do 
+                    trial_x = uniform_distribution(slab_xmin, slab_xmax)
+                    trial_y = uniform_distribution(slab_ymin, slab_ymax)
+                    trial_z = gaussian_distribution(slab_center_x, FWHM_x*fwhm2sigma)
+                    if ((trial_x>=x_min).and.(trial_x<=x_max).and.(trial_y>=y_min).and.&
+                        (trial_y<=y_max).and.(trial_z>=z_min).and.(trial_z<=z_max)) then
+                            exit
+                    end if
+                end do
+                global_part_list(i) % pos_x = trial_x
+                global_part_list(i) % pos_y = trial_y
+                global_part_list(i) % pos_z = trial_z
+            end do
+
+        case('double_uniform_slab')
             do i = 1, total_particles/2
                 global_part_list(i) % pos_x = uniform_distribution(slab1_xmin, slab1_xmax)
                 global_part_list(i) % pos_y = uniform_distribution(slab1_ymin, slab1_ymax)
@@ -188,7 +286,7 @@ module particle
                 global_part_list(i) % pos_z = uniform_distribution(slab2_zmin, slab2_zmax)
             end do
 
-        else if (particle_distribution == 'uniform_sphere') then
+        case('uniform_sphere')
             do i = 1, total_particles
                 do
                     trial_x = uniform_distribution(-sphere_radius, sphere_radius)
@@ -203,63 +301,210 @@ module particle
                 global_part_list(i) % pos_z = sphere_center_z + trial_z
             end do
 
-        else if (particle_distribution == 'custom') then
+        case('custom')
             !>
             ! use custom fucntion locate in user_custom directory
             ! (add in the future)
             !>
-        else
+        case default
             write(*, *) ' unrecongnized option for particle distribution'
             stop
+        end select
+
+        !> rotate target
+        if (rotate_target .eqv. .true.) then
+            select case (rotate_sequence)
+            
+            case('x')
+                call rotate_all_target('x')
+
+            case('y')
+                call rotate_all_target('y')
+
+            case('z')
+                call rotate_all_target('z')
+
+            case('xy')
+                call rotate_all_target('x')
+                call rotate_all_target('y')
+
+            case('xz')
+                call rotate_all_target('x')
+                call rotate_all_target('z')
+
+            case('yx')
+                call rotate_all_target('y')
+                call rotate_all_target('x')
+
+            case('yz')
+                call rotate_all_target('y')
+                call rotate_all_target('z')
+
+            case('zx')
+                call rotate_all_target('z')
+                call rotate_all_target('x')
+
+            case('zy')
+                call rotate_all_target('z')
+                call rotate_all_target('y')
+
+            case('xyz')
+                call rotate_all_target('x')
+                call rotate_all_target('y')
+                call rotate_all_target('z')
+
+            case('xzy')
+                call rotate_all_target('x')
+                call rotate_all_target('z')
+                call rotate_all_target('y')
+
+            case('yxz')
+                call rotate_all_target('y')
+                call rotate_all_target('x')
+                call rotate_all_target('z')
+
+            case('yzx')
+                call rotate_all_target('y')
+                call rotate_all_target('z')
+                call rotate_all_target('x')
+
+            case('zxy')
+                call rotate_all_target('z')
+                call rotate_all_target('x')
+                call rotate_all_target('y')
+
+            case('zyx')
+                call rotate_all_target('z')
+                call rotate_all_target('y')
+                call rotate_all_target('x')
+
+            case default
+                write(*, *) ' unrecongnized option for rotate sequence'
+                stop
+
+            end select
         end if
 
         !> load particle velocity distrituion
-        if (velocity_distribution == 'cold_xyz') then
+        select case(velocity_distribution)
+
+        case('cold_xyz')
             do i = 1, total_particles
                 global_part_list(i) % vel_x = 0.d0
                 global_part_list(i) % vel_y = 0.d0
                 global_part_list(i) % vel_z = 0.d0
             end do
-        else if (velocity_distribution == 'maxwell_xyz') then
+
+        case('maxwell_xyz')
             do i = 1, total_particles
                 global_part_list(i) % vel_x = maxwell_boltzmann(particle_temp_x, particle_mass)
                 global_part_list(i) % vel_y = maxwell_boltzmann(particle_temp_y, particle_mass)
                 global_part_list(i) % vel_z = maxwell_boltzmann(particle_temp_z, particle_mass)
             end do
-        else if (velocity_distribution == 'cold_xy_maxwell_z') then
+
+        case('cold_xy_maxwell_z')
                 global_part_list(i) % vel_x = 0.d0
                 global_part_list(i) % vel_y = 0.d0
                 global_part_list(i) % vel_z = maxwell_boltzmann(particle_temp_z, particle_mass)
-        else if (velocity_distribution == 'cold_xz_maxwell_y') then
+
+        case('cold_xz_maxwell_y')
                 global_part_list(i) % vel_x = 0.d0
                 global_part_list(i) % vel_y = maxwell_boltzmann(particle_temp_y, particle_mass)
                 global_part_list(i) % vel_z = 0.d0
-        else if (velocity_distribution == 'cold_yz_maxwell_x') then
+
+        case('cold_yz_maxwell_x')
                 global_part_list(i) % vel_x = maxwell_boltzmann(particle_temp_x, particle_mass)
                 global_part_list(i) % vel_y = 0.d0
                 global_part_list(i) % vel_z = 0.d0
-        else if (velocity_distribution == 'cold_x_maxwell_yz') then
+
+        case('cold_x_maxwell_yz')
                 global_part_list(i) % vel_x = 0.d0
                 global_part_list(i) % vel_y = maxwell_boltzmann(particle_temp_y, particle_mass)
                 global_part_list(i) % vel_z = maxwell_boltzmann(particle_temp_z, particle_mass)
-        else if (velocity_distribution == 'cold_y_maxwell_xz') then
+
+        case('cold_y_maxwell_xz')
                 global_part_list(i) % vel_x = maxwell_boltzmann(particle_temp_x, particle_mass)
                 global_part_list(i) % vel_y = 0.d0
                 global_part_list(i) % vel_z = maxwell_boltzmann(particle_temp_z, particle_mass)
-        else if (velocity_distribution == 'cold_z_maxwell_xy') then
+
+        case('cold_z_maxwell_xy')
                 global_part_list(i) % vel_x = maxwell_boltzmann(particle_temp_x, particle_mass)
                 global_part_list(i) % vel_y = maxwell_boltzmann(particle_temp_y, particle_mass)
                 global_part_list(i) % vel_z = 0.d0
-        else
+
+        case default
             write(*, *) ' unrecongnized option for velocity distribution'
             stop
-        end if
+        end select
 
         do i = 1, total_particles
             global_part_list(i) % mass = particle_mass
             global_part_list(i) % charge = particle_charge
         end do
+
     end subroutine load_particles_globally
+
+
+    !> rotate all target
+    subroutine rotate_all_target(rotate_about)
+        implicit none
+        character(len=*) :: rotate_about
+        double precision :: tmp(3)
+        integer          :: i
+
+        select case(rotate_about)
+        
+        case ('x')
+            do i = 1, total_particles
+                tmp = rotate_3d(global_part_list(i) % pos_x, global_part_list(i) % pos_y, &
+                                global_part_list(i) % pos_z, rotate_x, 'x', trim(rotate_unit))
+                if ((tmp(1) > x_max).or.(tmp(1) < x_min).or.(tmp(2) > y_max).or.&
+                    (tmp(2) < y_min).or.(tmp(3) > z_max).or.(tmp(3) < z_min)) then
+                    write(*, *) ' error: after rotate target particle are out of domain'
+                    stop
+                else
+                    global_part_list(i) % pos_x = tmp(1)
+                    global_part_list(i) % pos_y = tmp(2)
+                    global_part_list(i) % pos_z = tmp(3)
+                end if
+            end do
+
+        case ('y')
+            do i = 1, total_particles
+                tmp = rotate_3d(global_part_list(i) % pos_x, global_part_list(i) % pos_y, &
+                                global_part_list(i) % pos_z, rotate_y, 'y', trim(rotate_unit))
+                if ((tmp(1) > x_max).or.(tmp(1) < x_min).or.(tmp(2) > y_max).or.&
+                    (tmp(2) < y_min).or.(tmp(3) > z_max).or.(tmp(3) < z_min)) then
+                    write(*, *) ' error: after rotate target particle are out of domain'
+                    stop
+                else
+                    global_part_list(i) % pos_x = tmp(1)
+                    global_part_list(i) % pos_y = tmp(2)
+                    global_part_list(i) % pos_z = tmp(3)
+                end if
+            end do
+
+        case ('z')
+            do i = 1, total_particles
+                tmp = rotate_3d(global_part_list(i) % pos_x, global_part_list(i) % pos_y, &
+                                global_part_list(i) % pos_z, rotate_z, 'z', trim(rotate_unit))
+                if ((tmp(1) > x_max).or.(tmp(1) < x_min).or.(tmp(2) > y_max).or.&
+                    (tmp(2) < y_min).or.(tmp(3) > z_max).or.(tmp(3) < z_min)) then
+                    write(*, *) ' error: after rotate target particle are out of domain'
+                    stop
+                else
+                    global_part_list(i) % pos_x = tmp(1)
+                    global_part_list(i) % pos_y = tmp(2)
+                    global_part_list(i) % pos_z = tmp(3)
+                end if
+            end do
+        
+        case default
+            write(*, *) 'unrecognized rotate about axis'
+            stop
+
+        end select
+    end subroutine rotate_all_target
 
 
     !> unload particle globally
