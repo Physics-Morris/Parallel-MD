@@ -311,6 +311,80 @@ module particle
             stop
         end select
 
+        !> rotate target
+        if (rotate_target .eqv. .true.) then
+            select case (rotate_sequence)
+            
+            case('x')
+                call rotate_all_target('x')
+
+            case('y')
+                call rotate_all_target('y')
+
+            case('z')
+                call rotate_all_target('z')
+
+            case('xy')
+                call rotate_all_target('x')
+                call rotate_all_target('y')
+
+            case('xz')
+                call rotate_all_target('x')
+                call rotate_all_target('z')
+
+            case('yx')
+                call rotate_all_target('y')
+                call rotate_all_target('x')
+
+            case('yz')
+                call rotate_all_target('y')
+                call rotate_all_target('z')
+
+            case('zx')
+                call rotate_all_target('z')
+                call rotate_all_target('x')
+
+            case('zy')
+                call rotate_all_target('z')
+                call rotate_all_target('y')
+
+            case('xyz')
+                call rotate_all_target('x')
+                call rotate_all_target('y')
+                call rotate_all_target('z')
+
+            case('xzy')
+                call rotate_all_target('x')
+                call rotate_all_target('z')
+                call rotate_all_target('y')
+
+            case('yxz')
+                call rotate_all_target('y')
+                call rotate_all_target('x')
+                call rotate_all_target('z')
+
+            case('yzx')
+                call rotate_all_target('y')
+                call rotate_all_target('z')
+                call rotate_all_target('x')
+
+            case('zxy')
+                call rotate_all_target('z')
+                call rotate_all_target('x')
+                call rotate_all_target('y')
+
+            case('zyx')
+                call rotate_all_target('z')
+                call rotate_all_target('y')
+                call rotate_all_target('x')
+
+            case default
+                write(*, *) ' unrecongnized option for rotate sequence'
+                stop
+
+            end select
+        end if
+
         !> load particle velocity distrituion
         select case(velocity_distribution)
 
@@ -369,6 +443,68 @@ module particle
         end do
 
     end subroutine load_particles_globally
+
+
+    !> rotate all target
+    subroutine rotate_all_target(rotate_about)
+        implicit none
+        character(len=*) :: rotate_about
+        double precision :: tmp(3)
+        integer          :: i
+
+        select case(rotate_about)
+        
+        case ('x')
+            do i = 1, total_particles
+                tmp = rotate_3d(global_part_list(i) % pos_x, global_part_list(i) % pos_y, &
+                                global_part_list(i) % pos_z, rotate_x, 'x', trim(rotate_unit))
+                if ((tmp(1) > x_max).or.(tmp(1) < x_min).or.(tmp(2) > y_max).or.&
+                    (tmp(2) < y_min).or.(tmp(3) > z_max).or.(tmp(3) < z_min)) then
+                    write(*, *) ' error: after rotate target particle are out of domain'
+                    stop
+                else
+                    global_part_list(i) % pos_x = tmp(1)
+                    global_part_list(i) % pos_y = tmp(2)
+                    global_part_list(i) % pos_z = tmp(3)
+                end if
+            end do
+
+        case ('y')
+            do i = 1, total_particles
+                tmp = rotate_3d(global_part_list(i) % pos_x, global_part_list(i) % pos_y, &
+                                global_part_list(i) % pos_z, rotate_y, 'y', trim(rotate_unit))
+                if ((tmp(1) > x_max).or.(tmp(1) < x_min).or.(tmp(2) > y_max).or.&
+                    (tmp(2) < y_min).or.(tmp(3) > z_max).or.(tmp(3) < z_min)) then
+                    write(*, *) ' error: after rotate target particle are out of domain'
+                    stop
+                else
+                    global_part_list(i) % pos_x = tmp(1)
+                    global_part_list(i) % pos_y = tmp(2)
+                    global_part_list(i) % pos_z = tmp(3)
+                end if
+            end do
+
+        case ('z')
+            do i = 1, total_particles
+                tmp = rotate_3d(global_part_list(i) % pos_x, global_part_list(i) % pos_y, &
+                                global_part_list(i) % pos_z, rotate_z, 'z', trim(rotate_unit))
+                if ((tmp(1) > x_max).or.(tmp(1) < x_min).or.(tmp(2) > y_max).or.&
+                    (tmp(2) < y_min).or.(tmp(3) > z_max).or.(tmp(3) < z_min)) then
+                    write(*, *) ' error: after rotate target particle are out of domain'
+                    stop
+                else
+                    global_part_list(i) % pos_x = tmp(1)
+                    global_part_list(i) % pos_y = tmp(2)
+                    global_part_list(i) % pos_z = tmp(3)
+                end if
+            end do
+        
+        case default
+            write(*, *) 'unrecognized rotate about axis'
+            stop
+
+        end select
+    end subroutine rotate_all_target
 
 
     !> unload particle globally

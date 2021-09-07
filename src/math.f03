@@ -71,4 +71,81 @@ module math
             hat = A / mag(A)
         end function
 
+
+        function degree2radian(degree)
+            implicit none
+            double precision :: degree2radian, degree
+            degree2radian = degree / 180.d0 * pi
+        end function degree2radian
+
+
+        function radian2degree(radian)
+            implicit none
+            double precision :: radian2degree, radian
+            radian2degree = radian * 180.d0 / pi
+        end function radian2degree
+
+
+        !> rotate about x, y, z axis
+        function rotate_3d(x, y, z, angle, rotate_about, unit)
+            implicit none
+            double precision :: rotate_3d(3), x, y, z, angle
+            character(len=*) :: unit, rotate_about
+            select case(rotate_about)
+            !> about x-axis
+            !> x'=x, y'=ycos()-zsin(), z'=ysin()+zcos()
+            case ('x')
+                if (unit == 'degree') then
+                    rotate_3d(1) = x
+                    rotate_3d(2) = y * dcos(degree2radian(angle)) - z * dsin(degree2radian(angle))
+                    rotate_3d(3) = y * dsin(degree2radian(angle)) + z * dcos(degree2radian(angle))
+                else if (unit == 'radian') then
+                    rotate_3d(1) = x
+                    rotate_3d(2) = y * dcos(angle) - z * dsin(angle)
+                    rotate_3d(3) = y * dsin(angle) + z * dcos(angle)
+                else
+                    write(*, *) 'unrecognized option for unit'
+                    stop
+                end if
+
+            !> about y-axis
+            !> x'=xcos()+zsin(), y'=y, z'=-xsin()+zcos()
+            case ('y')
+                if (unit == 'degree') then
+                    rotate_3d(1) = x * dcos(degree2radian(angle)) + z * dsin(degree2radian(angle))
+                    rotate_3d(2) = y
+                    rotate_3d(3) = -x * dsin(degree2radian(angle)) + z * dcos(degree2radian(angle))
+                else if (unit == 'radian') then
+                    rotate_3d(1) = x * dcos(angle) + z * dsin(angle)
+                    rotate_3d(2) = y
+                    rotate_3d(3) = -x * dsin(angle) + z * dcos(angle)
+                else
+                    write(*, *) 'unrecognized option for unit'
+                    stop
+                end if
+
+            !> about z-axis
+            !> x'=xcos()-ysin(), y'=xsin()+ycos(), z'=z
+            case ('z')
+                if (unit == 'degree') then
+                    rotate_3d(1) = x * dcos(degree2radian(angle)) - y * dsin(degree2radian(angle))
+                    rotate_3d(2) = x * dsin(degree2radian(angle)) + y * dcos(degree2radian(angle))
+                    rotate_3d(3) = z
+                else if (unit == 'radian') then
+                    rotate_3d(1) = x * dcos(angle) - y * dsin(angle)
+                    rotate_3d(2) = x * dsin(angle) + y * dcos(angle)
+                    rotate_3d(3) = z
+                else
+                    write(*, *) 'unrecognized option for unit'
+                    stop
+                end if
+
+            case default
+                write(*, *) 'unrecognized option for rotate_about'
+                stop
+
+            end select
+
+        end function rotate_3d
+
 end module math

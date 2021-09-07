@@ -21,7 +21,8 @@ module helper
     sphere_center_x, sphere_center_y, sphere_center_z, sphere_radius, &
     FWHM_x, FWHM_y, FWHM_z, slab_center_x, slab_center_y, slab_center_z, &
     velocity_distribution, particle_temp_x, particle_temp_y, particle_temp_z, &
-    part_boundary_x, part_boundary_y, part_boundary_z
+    part_boundary_x, part_boundary_y, part_boundary_z, rotate_target, rotate_sequence, &
+    rotate_unit, rotate_x, rotate_y, rotate_z
 
     namelist / output_block / &
     number_snapshots
@@ -112,6 +113,7 @@ module helper
                 call check_input_parameter('particle_mass')
                 call check_input_parameter('particle_charge')
                 call check_input_parameter('particle_distribution')
+                call check_input_parameter('rotate_target')
                 call check_input_parameter('particle_velocity_distribution')
                 call check_input_parameter('temp_x')
                 call check_input_parameter('temp_y')
@@ -602,6 +604,45 @@ module helper
                     else
                         call print_ok_mark(ierr=0)
                     end if
+                end if
+
+            case('rotate_target')
+                if (rotate_target .eqv. .true.) then
+                    write(*, '(A30, L25)', advance='no')     '  Rotate target:              ', rotate_target
+                    call print_ok_mark(ierr=0)
+                    !> check rotate sequence
+                    write(*, '(A30, A, A)', advance='no')    '  Rotate sequence:            ', &
+                    repeat(' ', default_length-len(trim(rotate_sequence))), trim(rotate_sequence)
+                    if ((rotate_sequence == 'xyz').or.(rotate_sequence == 'xzy').or. &
+                        (rotate_sequence == 'yxz').or.(rotate_sequence == 'yzx').or. &
+                        (rotate_sequence == 'zxy').or.(rotate_sequence == 'zyx').or. &
+                        (rotate_sequence == 'xy').or.(rotate_sequence == 'yx').or. &
+                        (rotate_sequence == 'xz').or.(rotate_sequence == 'zx').or. &
+                        (rotate_sequence == 'yz').or.(rotate_sequence == 'zy').or. &
+                        (rotate_sequence == 'x').or.(rotate_sequence == 'y').or. &
+                        (rotate_sequence == 'z')) then
+                        call print_ok_mark(ierr=0)
+                    else
+                        call print_ok_mark(ierr=1)
+                    end if
+                    !> check rotate unit
+                    write(*, '(A30, A, A)', advance='no')    '  Rotate unit:                ', &
+                    repeat(' ', default_length-len(trim(rotate_unit))), trim(rotate_unit)
+                    if ((rotate_unit == 'degree').or.(rotate_unit == 'radian')) then
+                        call print_ok_mark(ierr=0)
+                    else
+                        call print_ok_mark(ierr=1)
+                    end if
+                    !> write rotate angle
+                    write(*, '(A30)', advance='no') '  Rotate about x axis:        '
+                    write(*, '(F25.2)', advance='no') rotate_x
+                    call print_ok_mark(ierr=0)
+                    write(*, '(A30)', advance='no') '  Rotate about y axis:        '
+                    write(*, '(F25.2)', advance='no') rotate_y
+                    call print_ok_mark(ierr=0)
+                    write(*, '(A30)', advance='no') '  Rotate about z axis:        '
+                    write(*, '(F25.2)', advance='no') rotate_z
+                    call print_ok_mark(ierr=0)
                 end if
 
             case('particle_velocity_distribution')

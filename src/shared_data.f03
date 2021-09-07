@@ -27,6 +27,14 @@ module shared_data
     double precision            :: particle_temp_x, particle_temp_y, particle_temp_z
     integer                     :: local_particles
 
+    !> rotate target
+    logical                     :: rotate_target=.false.
+    character(len=60)           :: rotate_sequence='xyz'
+    character(len=60)           :: rotate_unit='degree'
+    double precision            :: rotate_x=0.d0
+    double precision            :: rotate_y=0.d0
+    double precision            :: rotate_z=0.d0
+
     integer                     :: number_snapshots
 
     !> mpi related shared_data
