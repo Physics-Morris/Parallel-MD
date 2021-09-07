@@ -43,6 +43,7 @@ module shared_data
     logical                     :: load_balance
     integer                     :: load_balance_num_step
     double precision            :: load_balance_extent
+    double precision            :: max_speedup
     !> auxiliary cells
     integer, allocatable        :: auxi_cell(:, :, :, :)
     !> new auxi_cell after load balance

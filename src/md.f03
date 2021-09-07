@@ -91,9 +91,12 @@ program MD
     !> load balancing
     if ((load_balance .eqv. .true.).and.(load_balance_num_step >= 0)) then
         call print_execute_task_name('  Initial dynamics load balance ... ', task_start_time)
-        call dynamics_load_balance(ierr)
+        call dynamics_load_balance(ierr, max_speedup)
         call update_particle_procs_rank(ierr)
         call output(step+1, ierr)
+        if (my_id == master_id) then
+            write(*, '(A, F5.2, A)', advance='no') '(x', max_speedup, ' faster)'
+        end if
         call print_task_time(task_start_time)
         call respond_to_ierr(ierr)
     end if
