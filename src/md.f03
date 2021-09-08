@@ -88,9 +88,13 @@ program MD
     call respond_to_ierr(ierr)
 
     
-    !> load balancing
-    if ((load_balance .eqv. .true.).and.(load_balance_num_step >= 0)) then
+    !> load balancing. first check load balance threshold, and chose between
+    !> using load balance threshold or load balance num step
+    call check_dlb_threshold(current_threshold)
+    if (((load_balance .eqv. .true.).and.(load_balance_num_step >= 0)).or. &
+        ((load_balance .eqv. .true.).and.(current_threshold<=load_balance_threshold))) then
         call print_execute_task_name('  Initial dynamics load balance ... ', task_start_time)
+        !> preform dynamcis load balance
         call dynamics_load_balance(ierr, max_speedup)
         call update_particle_procs_rank(ierr)
         call output(step+1, ierr)

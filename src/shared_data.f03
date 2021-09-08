@@ -48,9 +48,11 @@ module shared_data
 
 
     !> load balance option
-    logical                     :: load_balance
-    integer                     :: load_balance_num_step
+    logical                     :: load_balance=.false.
+    integer                     :: load_balance_num_step=-1
     double precision            :: load_balance_extent
+    double precision            :: load_balance_threshold=-1.d0
+    double precision            :: current_threshold
     double precision            :: max_speedup
     !> auxiliary cells
     integer, allocatable        :: auxi_cell(:, :, :, :)

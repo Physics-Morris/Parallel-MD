@@ -11,7 +11,7 @@ module helper
     namelist / basics_block / &
     sim_dimension, x_min, x_max, y_min, y_max, z_min, z_max, &
     init_numprocs_x, init_numprocs_y, init_numprocs_z, load_balance, &
-    load_balance_num_step, load_balance_extent
+    load_balance_num_step, load_balance_extent, load_balance_threshold
 
     namelist / particles_block / &
     total_particles, particle_mass, particle_charge, particle_distribution, &
@@ -103,6 +103,7 @@ module helper
                 call check_input_parameter('load_balance')
                 call check_input_parameter('load_balance_step')
                 call check_input_parameter('load_balance_extent')
+                call check_input_parameter('load_balance_threshold')
                 call check_input_parameter('x_min')
                 call check_input_parameter('x_max')
                 call check_input_parameter('y_min')
@@ -441,13 +442,9 @@ module helper
                 call print_ok_mark(ierr=0)
 
             case('load_balance_step')
-                write(*, '(A30)', advance='no') '  Load balancing every (step):'
                 !> load balance step must greater than 0
-                if ((load_balance .eqv. .true.).and.(load_balance_num_step <= 0)) then
-                    write(*, '(I25)', advance='no') load_balance_num_step
-                    call print_ok_mark(ierr=1)
-                    stop
-                else 
+                if ((load_balance .eqv. .true.).and.(load_balance_num_step >= 0)) then
+                    write(*, '(A30)', advance='no') '  Load balancing every (step):'
                     write(*, '(I25)', advance='no') load_balance_num_step
                     call print_ok_mark(ierr=0)
                 end if
@@ -456,82 +453,99 @@ module helper
                 write(*, '(A30)', advance='no') '  Load balancing extent [0, 1]:'
                 !> load balance step must greater than 0
                 if ((load_balance_extent < 0).or.(load_balance_extent > 1)) then
-                    write(*, '(ES25.2)', advance='no') load_balance_extent
+                    write(*, '(F25.2)', advance='no') load_balance_extent
                     call print_ok_mark(ierr=1)
                     stop
                 else 
                     num_auxi_per_procs = num_auxi_per_procs + &
                                          nint(max_num_auxi_per_procs*load_balance_extent)
-                    write(*, '(ES25.2)', advance='no') load_balance_extent
+                    write(*, '(F25.2)', advance='no') load_balance_extent
                     call print_ok_mark(ierr=0)
                 end if
 
+            case('load_balance_threshold')
+                !> load balance step must greater than 0
+                if ((load_balance .eqv. .true.).and.(load_balance_num_step < 0).and. &
+                    (load_balance_threshold >= 0.d0).and.(load_balance_threshold <= 1.d0)) then
+                    write(*, '(A30)', advance='no') '  Load threshold [0, 1]:      '
+                    write(*, '(F25.2)', advance='no') load_balance_threshold
+                    call print_ok_mark(ierr=0)
+                else if ((load_balance .eqv. .true.).and.(load_balance_num_step < 0).and. &
+                         (load_balance_threshold < 0.d0).or.(load_balance_threshold > 1.d0)) then
+                    write(*, *) ' Needs to specify either load_balance_num_step or load_balance_threshold'
+                    write(*, *) ' and choose right range of load_balance_num_step or load_balance_threshold'
+                    stop
+                else if ((load_balance .eqv. .true.).and.(load_balance_num_step >= 0).and. &
+                         (load_balance_threshold >= 0.d0)) then
+                    write(*, *) ' You can only choose either load_balance_num_step or load_balance_threshold'
+                    stop
+                end if
 
             case('x_min')
                 write(*, '(A30)', advance='no') '  x_min of the system:        '
                 if (x_min >= x_max) then
-                    write(*, '(ES25.2)', advance='no') x_min
+                    write(*, '(F25.2)', advance='no') x_min
                     call print_ok_mark(ierr=1)
                 else 
-                    write(*, '(ES25.2)', advance='no') x_min
+                    write(*, '(F25.2)', advance='no') x_min
                     call print_ok_mark(ierr=0)
                 end if
 
             case('x_max')
                 write(*, '(A30)', advance='no') '  x_max of the system:        '
                 if (x_min >= x_max) then
-                    write(*, '(ES25.2)', advance='no') x_max
+                    write(*, '(F25.2)', advance='no') x_max
                     call print_ok_mark(ierr=1)
                     stop
                 else 
-                    write(*, '(ES25.2)', advance='no') x_max
+                    write(*, '(F25.2)', advance='no') x_max
                     call print_ok_mark(ierr=0)
                 end if
 
             case('y_min')
                 write(*, '(A30)', advance='no') '  y_min of the system:        '
                 if (y_min >= y_max) then
-                    write(*, '(ES25.2)', advance='no') y_min
+                    write(*, '(F25.2)', advance='no') y_min
                     call print_ok_mark(ierr=1)
                 else 
-                    write(*, '(ES25.2)', advance='no') y_min
+                    write(*, '(F25.2)', advance='no') y_min
                     call print_ok_mark(ierr=0)
                 end if
 
             case('y_max')
                 write(*, '(A30)', advance='no') '  y_max of the system:        '
                 if (y_min >= y_max) then
-                    write(*, '(ES25.2)', advance='no') y_max
+                    write(*, '(F25.2)', advance='no') y_max
                     call print_ok_mark(ierr=1)
                     stop
                 else 
-                    write(*, '(ES25.2)', advance='no') y_max
+                    write(*, '(F25.2)', advance='no') y_max
                     call print_ok_mark(ierr=0)
                 end if
 
             case('z_min')
                 write(*, '(A30)', advance='no') '  z_min of the system:        '
                 if (z_min >= z_max) then
-                    write(*, '(ES25.2)', advance='no') z_min
+                    write(*, '(F25.2)', advance='no') z_min
                     call print_ok_mark(ierr=1)
                 else 
-                    write(*, '(ES25.2)', advance='no') z_min
+                    write(*, '(F25.2)', advance='no') z_min
                     call print_ok_mark(ierr=0)
                 end if
 
             case('z_max')
                 write(*, '(A30)', advance='no') '  z_max of the system:        '
                 if (z_min >= z_max) then
-                    write(*, '(ES25.2)', advance='no') z_max
+                    write(*, '(F25.2)', advance='no') z_max
                     call print_ok_mark(ierr=1)
                     stop
                 else 
-                    write(*, '(ES25.2)', advance='no') z_max
+                    write(*, '(F25.2)', advance='no') z_max
                     call print_ok_mark(ierr=0)
                 end if
 
             case('total_particles')
-                write(*, '(A30, I25)', advance='no')     '  Total number of particles:  ', total_particles
+                write(*, '(A30, ES25.0)', advance='no')     '  Total number of particles:  ', dble(total_particles)
                 if (total_particles <= 0) then
                     call print_ok_mark(ierr=1)
                     stop
@@ -665,22 +679,22 @@ module helper
             case('temp_y')
                 write(*, '(A30)', advance='no') '  Particle Temperature in y:  '
                 if (particle_temp_y < 0.d0) then
-                    write(*, '(ES25.2)', advance='no') particle_temp_y
+                    write(*, '(F25.2)', advance='no') particle_temp_y
                     call print_ok_mark(ierr=1)
                     stop
                 else
-                    write(*, '(ES25.2)', advance='no') particle_temp_y
+                    write(*, '(F25.2)', advance='no') particle_temp_y
                     call print_ok_mark(ierr=0)
                 end if
 
             case('temp_z')
                 write(*, '(A30)', advance='no') '  Particle Temperature in z:  '
                 if (particle_temp_z < 0.d0) then
-                    write(*, '(ES25.2)', advance='no') particle_temp_z
+                    write(*, '(F25.2)', advance='no') particle_temp_z
                     call print_ok_mark(ierr=1)
                     stop
                 else
-                    write(*, '(ES25.2)', advance='no') particle_temp_z
+                    write(*, '(F25.2)', advance='no') particle_temp_z
                     call print_ok_mark(ierr=0)
                 end if
 

@@ -116,6 +116,10 @@ module mpi_routines
         call mpi_bcast(particle_charge, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)
         call mpi_bcast(number_snapshots, 1, mpi_integer, master_id, mpi_comm_world, ierr)
         call mpi_bcast(num_auxi_per_procs, 1, mpi_integer, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(load_balance, 1, mpi_logical, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(load_balance_num_step, 1, mpi_integer, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(load_balance_extent, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)
+        call mpi_bcast(load_balance_threshold, 1, mpi_double_precision, master_id, mpi_comm_world, ierr)
     end subroutine brocasting_input_file
     
 
@@ -822,8 +826,8 @@ module mpi_routines
         call mpi_waitall(recv_part, requests, status, ierr)
 
         !> find before max and after max
-        call mpi_allreduce(local_particles, before_max, 1, mpi_integer, mpi_max, cart_comm_3d)
-        call mpi_allreduce(local_particles_new, after_max, 1, mpi_integer, mpi_max, cart_comm_3d)
+        call mpi_allreduce(local_particles, before_max, 1, mpi_integer, mpi_max, cart_comm_3d, ierr)
+        call mpi_allreduce(local_particles_new, after_max, 1, mpi_integer, mpi_max, cart_comm_3d, ierr)
 
         !> update new local particles number
         local_particles = local_particles_new
@@ -837,6 +841,17 @@ module mpi_routines
         deallocate(local_part_list_new)
 
     end subroutine dlb_redistribute_particles
+
+
+    !> check load balance threshold
+    subroutine check_dlb_threshold(threshold)
+        implicit none
+        double precision, intent(out) :: threshold
+        integer                       :: max_part, min_part
+        call mpi_allreduce(local_particles, max_part, 1, mpi_integer, mpi_max, cart_comm_3d, ierr)
+        call mpi_allreduce(local_particles, min_part, 1, mpi_integer, mpi_min, cart_comm_3d, ierr)
+        threshold = dble(min_part) / dble(max_part)
+    end subroutine check_dlb_threshold
 
 
 end module mpi_routines
