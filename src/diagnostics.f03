@@ -333,7 +333,136 @@ module diagnostics
         !> close fortran predefined datatypes.
         call h5close_f(error)
 
+        !> write some information in serial part
+        if (my_id == master_id) then
+            call serial_output_part(filename)
+        end if
     end subroutine output
+
+
+    subroutine serial_output_part(filename)
+        implicit none
+        character(len=*)             :: filename
+
+        !> group name
+        character(len=16),  parameter :: groupname1 = "/simulation_info"
+        character(len=33),  parameter :: groupname2 = "/simulation_info/input_parameters"
+
+        !> group name
+        character(len=32), parameter :: groupname = "simulation_info/input_parameters" 
+
+        integer(hid_t) :: group1_id, group2_id ! group identifiers
+
+        !> dataset name
+        character(len=23), parameter :: dsetname1 = "simulation_info/version"  
+        character(len=5),  parameter :: dsetname2 = "dset2"
+
+        !> file identifier
+        integer(hid_t)               :: file_id       
+        !> group identifier
+        integer(hid_t)               :: group_id      
+        !> dataset identifier
+        integer(hid_t)               :: dataset_id    
+        !> data space identifier
+        integer(hid_t)               :: dataspace_id  
+
+        integer                      ::  i, j
+        integer                      ::  error
+
+        integer, dimension(3, 3) :: dset1_data
+        integer, dimension(2, 10) :: dset2_data
+
+        !> datasets dimensions
+        integer(hsize_t), dimension(2) :: dims1 = (/ 3, 3 /) 
+        integer(hsize_t), dimension(2) :: dims2 = (/2,10/)
+        integer(hsize_t), dimension(2) :: data_dims
+
+        !> datasets rank
+        integer     ::   rank = 2 
+
+        !
+        !initialize dset1_data array
+        !
+        do i = 1, 3
+            do j = 1, 3
+                dset1_data(i,j) = j;
+            end do
+        end do
+
+        !
+        !initialize dset2_data array
+        !
+        do i = 1, 2
+            do j = 1, 10
+                dset2_data(i,j) = j;
+            end do
+        end do
+
+
+        !> initialize fortran interface.
+        call h5open_f(error)
+
+        !> open an existing file.
+        call h5fopen_f (filename, h5f_acc_rdwr_f, file_id, error)
+
+        !> create group "mygroup" in the root group using absolute name.
+        call h5gcreate_f(file_id, groupname1, group1_id, error)
+
+        !> create group "group_a" in group "mygroup" using absolute name.
+        call h5gcreate_f(file_id, groupname2, group2_id, error)
+
+        !> close the groups.
+        call h5gclose_f(group1_id, error)
+        call h5gclose_f(group2_id, error)
+
+        !> create the data space for the first dataset.
+        call h5screate_simple_f(rank, dims1, dataspace_id, error)
+
+        !> create a dataset in group "mygroup" with default properties.
+        call h5dcreate_f(file_id, dsetname1, h5t_native_integer, dataspace_id, &
+            dataset_id, error)
+
+        !> write the first dataset.
+        data_dims(1) = 3
+        data_dims(2) = 3
+        call h5dwrite_f(dataset_id, h5t_native_integer, dset1_data, data_dims, error)
+
+        !> close the dataspace for the first dataset.
+        call h5sclose_f(dataspace_id, error)
+
+        !> close the first dataset.
+        call h5dclose_f(dataset_id, error)
+
+        !> open an existing group in the specified file.
+        call h5gopen_f(file_id, groupname, group_id, error)
+
+        !> create the data space for the second dataset.
+        call h5screate_simple_f(rank, dims2, dataspace_id, error)
+
+        !> create the second dataset in group "group_a" with default properties.
+        call h5dcreate_f(group_id, dsetname2, h5t_native_integer, dataspace_id, &
+            dataset_id, error)
+
+        !> write the second dataset.
+        data_dims(1) = 2
+        data_dims(1) = 10
+        call h5dwrite_f(dataset_id, h5t_native_integer, dset2_data, data_dims, error)
+
+        !> close the dataspace for the second dataset.
+        call h5sclose_f(dataspace_id, error)
+
+        !> close the second dataset.
+        call h5dclose_f(dataset_id, error)
+
+        !> close the group.
+        call h5gclose_f(group_id, error)
+
+        !> close the file.
+        call h5fclose_f(file_id, error)
+
+        !> close fortran interface.
+        call h5close_f(error)
+    end subroutine serial_output_part
 
 
     !> calulcate offset of output hyperslab
