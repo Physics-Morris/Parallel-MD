@@ -64,6 +64,13 @@ module shared_data
     integer                     :: auxi_num_x, auxi_num_y, auxi_num_z
     double precision            :: auxi_cell_wx, auxi_cell_wy, auxi_cell_wz
 
+    !> z location of the dlb cut
+    integer, allocatable        :: z_slice(:)
+    !> y location of the dlb cut for particular (z) procs
+    integer, allocatable        :: y_slice(:, :)
+    !> x location of the dlb cut for particular (z, y) procs
+    integer, allocatable        :: x_slice(:, :, :)
+
     
     !> initial distribution options parameter
     double precision            :: slab_xmin, slab_ymin, slab_zmin

@@ -172,7 +172,7 @@ module helper
                     case ('-d', '--default')
                         call print_empty_line(1)
                         write(*, *) ' Useing default input file... '
-                        call get_input_file('../inp/default', ierr)
+                        call get_input_file('../inp/default.input', ierr)
                         exit
 
                     case default

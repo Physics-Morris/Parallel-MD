@@ -7,6 +7,7 @@ module mpi_routines
     use error_handle
     use omp_lib
     implicit none
+
     
     contains
 
@@ -455,22 +456,38 @@ module mpi_routines
     end subroutine fillup_auxi_cell
 
 
+    !> allocate x, y, z slice array
+    subroutine allocate_xyz_dlb_slice(ierr)
+        implicit none
+        integer, intent(out) :: ierr
+        !> z location of the cut
+        allocate(z_slice(numprocs_z-1), stat=ierr)
+        !> y location of the cut for particular (z) procs
+        allocate(y_slice(numprocs_z, numprocs_y-1), stat=ierr)
+        !> x location of the cut for particular (z, y) procs
+        allocate(x_slice(numprocs_z, numprocs_y, numprocs_x-1), stat=ierr)
+        x_slice = 0
+        y_slice = 0
+        z_slice = 0
+    end subroutine allocate_xyz_dlb_slice
+
+
     !> subroutine for dynamics load balance use rectilinear method
     !1> Collect auxiliary grid of particle number in each procs
     !2> On master node use rectilienear method for load balance
     !3> Update auxi_cell for each procs
     !4> Redistribute particle
-    subroutine dynamics_load_balance(ierr, max_speedup)
+    subroutine dynamics_load_balance(ierr, max_speedup, z_slice, y_slice, x_slice)
         implicit none
         integer, intent(out)          :: ierr
         !> number of slice needs to be made
         integer                       :: num_z_slice, num_y_slice, num_x_slice
         !> z location of the cut
-        integer                       :: z_slice(numprocs_z-1)
+        integer, intent(out)          :: z_slice(numprocs_z-1)
         !> y location of the cut for particular (z) procs
-        integer                       :: y_slice(numprocs_z, numprocs_y-1)
+        integer, intent(out)          :: y_slice(numprocs_z, numprocs_y-1)
         !> x location of the cut for particular (z, y) procs
-        integer                       :: x_slice(numprocs_z, numprocs_y, numprocs_x-1)
+        integer, intent(out)          :: x_slice(numprocs_z, numprocs_y, numprocs_x-1)
         integer                       :: total_auxi
         integer                       :: before_max, after_max
         double precision, intent(out) :: max_speedup

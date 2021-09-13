@@ -80,6 +80,11 @@ program MD
     call print_task_time(task_start_time)
     call respond_to_ierr(ierr)
 
+    !> first allocate x, y, z slice array
+    call print_execute_task_name('  Allocate DLB nessaray array ... ', task_start_time)
+    call allocate_xyz_dlb_slice(ierr)
+    call print_task_time(task_start_time)
+    call respond_to_ierr(ierr)
 
     !> initial output
     call print_execute_task_name('  Write initial setup to H5 file ... ', task_start_time)
@@ -95,7 +100,7 @@ program MD
         ((load_balance .eqv. .true.).and.(current_threshold<=load_balance_threshold))) then
         call print_execute_task_name('  Initial dynamics load balance ... ', task_start_time)
         !> preform dynamcis load balance
-        call dynamics_load_balance(ierr, max_speedup)
+        call dynamics_load_balance(ierr, max_speedup, z_slice, y_slice, x_slice)
         call update_particle_procs_rank(ierr)
         call output(step+1, ierr)
         if (my_id == master_id) then

@@ -28,8 +28,8 @@ module diagnostics
         character(len=15), parameter                           :: dsetname_charge = "particle_charge" 
         character(len=17), parameter                           :: dsetname_vel = "particle_velocity" 
         character(len=17), parameter                           :: dsetname_pos = "particle_position" 
-        character(len=17), parameter                           :: dsetname_index = "global_cell_index" 
-        character(len=14), parameter                           :: dsetname_procs = "processor_rank" 
+        character(len=26), parameter                           :: dsetname_index = "particle_global_cell_index" 
+        character(len=23), parameter                           :: dsetname_procs = "particle_processor_rank" 
         !> file identifier 
         integer(hid_t)                                         :: file_id       
         !> dataset identifier 
@@ -333,7 +333,163 @@ module diagnostics
         !> close fortran predefined datatypes.
         call h5close_f(error)
 
+        !> write some information in serial part
+        if (my_id == master_id) then
+            call serial_output_part(filename)
+        end if
     end subroutine output
+
+
+    subroutine serial_output_part(filename)
+        implicit none
+        character(len=*)               :: filename
+
+        !> group name
+        character(len=16), parameter   :: groupname_sim_info = "/simulation_info"
+        character(len=26), parameter   :: groupname_dlb_slice = "/simulation_info/DLB_slice"
+
+        !> opening group
+        character(len=25), parameter   :: groupname_sim_info_open = "simulation_info/DLB_slice" 
+
+        !> group identifiers
+        integer(hid_t)                 :: group_sim_info_id, group_dlb_slice_id 
+
+        !> dataset name
+        character(len=27), parameter   :: dsetname_step_num = "simulation_info/step_number"  
+        character(len=7),  parameter   :: dsetname_z_slice = "z_slice"
+        character(len=7),  parameter   :: dsetname_y_slice = "y_slice"
+        character(len=7),  parameter   :: dsetname_x_slice = "x_slice"
+        character(len=11),  parameter  :: dsetname_xyz_cell_num = "cell_number"
+
+        !> file identifier
+        integer(hid_t)                 :: file_id       
+        !> group identifier
+        integer(hid_t)                 :: group_id      
+        !> dataset identifier
+        integer(hid_t)                 :: dataset_id    
+        !> data space identifier
+        integer(hid_t)                 :: dataspace_id  
+
+        integer                        ::  error
+
+        !> datasets dimensions
+        integer(hsize_t), dimension(1) :: dims_step
+        integer(hsize_t), dimension(1) :: dims_z_slice
+        integer(hsize_t), dimension(2) :: dims_y_slice
+        integer(hsize_t), dimension(3) :: dims_x_slice
+        integer(hsize_t), dimension(2) :: dims_xyz_cell_num
+
+        !> datasets rank
+        integer                        :: rank_step = 1 
+        integer                        :: rank_z_slice = 1
+        integer                        :: rank_y_slice = 2
+        integer                        :: rank_x_slice = 3
+        integer                        :: rank_xyz_cell_num = 2
+
+
+        !> initialize fortran interface.
+        call h5open_f(error)
+
+        !> open an existing file.
+        call h5fopen_f (filename, h5f_acc_rdwr_f, file_id, error)
+
+        !> create group groupname_sim_info
+        call h5gcreate_f(file_id, groupname_sim_info, group_sim_info_id, error)
+
+        !> create group groupname_dlb_slice 
+        call h5gcreate_f(file_id, groupname_dlb_slice, group_dlb_slice_id, error)
+
+        !> close the groups.
+        call h5gclose_f(group_sim_info_id, error)
+        call h5gclose_f(group_dlb_slice_id, error)
+
+
+        !> create the data space for step number dataset
+        dims_step(1) = 1
+        call h5screate_simple_f(rank_step, dims_step, dataspace_id, error)
+        !> create a dataset at dsetname_step_num
+        call h5dcreate_f(file_id, dsetname_step_num, h5t_native_integer, dataspace_id, & 
+                         dataset_id, error)
+        !> write the first dataset.
+        call h5dwrite_f(dataset_id, h5t_native_integer, step, dims_step, error)
+        !> close the dataspace for the first dataset.
+        call h5sclose_f(dataspace_id, error)
+        !> close the first dataset.
+        call h5dclose_f(dataset_id, error)
+
+
+        !> open an existing group in the specified file.
+        call h5gopen_f(file_id, groupname_sim_info_open, group_id, error)
+
+
+        !> create the data space for the z_slice dataset.
+        dims_z_slice(1) = numprocs_z - 1
+        call h5screate_simple_f(rank_z_slice, dims_z_slice, dataspace_id, error)
+        !> create the second dataset in group "group_a" with default properties.
+        call h5dcreate_f(group_id, dsetname_z_slice, h5t_native_integer, dataspace_id, &
+                         dataset_id, error)
+        !> write the second dataset.
+        call h5dwrite_f(dataset_id, h5t_native_integer, z_slice, dims_z_slice, error)
+        !> close the dataspace for the second dataset.
+        call h5sclose_f(dataspace_id, error)
+        !> close the second dataset.
+        call h5dclose_f(dataset_id, error)
+
+
+        !> create the data space for the y_slice dataset.
+        dims_y_slice(1) = numprocs_z
+        dims_y_slice(2) = numprocs_y - 1
+        call h5screate_simple_f(rank_y_slice, dims_y_slice, dataspace_id, error)
+        !> create the second dataset in group "group_a" with default properties.
+        call h5dcreate_f(group_id, dsetname_y_slice, h5t_native_integer, dataspace_id, &
+                         dataset_id, error)
+        !> write the second dataset.
+        call h5dwrite_f(dataset_id, h5t_native_integer, y_slice, dims_y_slice, error)
+        !> close the dataspace for the second dataset.
+        call h5sclose_f(dataspace_id, error)
+        !> close the second dataset.
+        call h5dclose_f(dataset_id, error)
+
+
+        !> create the data space for the x_slice dataset.
+        dims_x_slice(1) = numprocs_z
+        dims_x_slice(2) = numprocs_y
+        dims_x_slice(3) = numprocs_x - 1
+        call h5screate_simple_f(rank_x_slice, dims_x_slice, dataspace_id, error)
+        !> create the second dataset in group "group_a" with default properties.
+        call h5dcreate_f(group_id, dsetname_x_slice, h5t_native_integer, dataspace_id, &
+                         dataset_id, error)
+        !> write the second dataset.
+        call h5dwrite_f(dataset_id, h5t_native_integer, x_slice, dims_x_slice, error)
+        !> close the dataspace for the second dataset.
+        call h5sclose_f(dataspace_id, error)
+        !> close the second dataset.
+        call h5dclose_f(dataset_id, error)
+
+
+        !> create the data space for the xyz_cell_num dataset.
+        dims_xyz_cell_num(1) = 1
+        dims_xyz_cell_num(2) = 3
+        call h5screate_simple_f(rank_xyz_cell_num, dims_xyz_cell_num, dataspace_id, error)
+        !> create the second dataset in group "group_a" with default properties.
+        call h5dcreate_f(group_id, dsetname_xyz_cell_num, h5t_native_integer, dataspace_id, &
+                         dataset_id, error)
+        !> write the second dataset.
+        call h5dwrite_f(dataset_id, h5t_native_integer, (/ auxi_num_x, auxi_num_y, auxi_num_z/), dims_xyz_cell_num, error)
+        !> close the dataspace for the second dataset.
+        call h5sclose_f(dataspace_id, error)
+        !> close the second dataset.
+        call h5dclose_f(dataset_id, error)
+
+
+        !> close the group.
+        call h5gclose_f(group_id, error)
+        !> close the file.
+        call h5fclose_f(file_id, error)
+        !> close fortran interface.
+        call h5close_f(error)
+
+    end subroutine serial_output_part
 
 
     !> calulcate offset of output hyperslab
