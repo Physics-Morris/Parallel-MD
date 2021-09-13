@@ -1,5 +1,4 @@
 program MD
-    use shared_data
     use helper
     use mpi_routines
     use mpi
