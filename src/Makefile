@@ -8,8 +8,10 @@ SRC = constants.f03 math.f03 shared_data.f03 error_handle.f03 particle.f03 helpe
 TARGET=MD
 BINDIR=../bin
 OBJ=${SRC:.f03=.o}
-LIB=work/morris123/MD/hdf5/lib
-INC=work/morris123/MD/hdf5/include
+# LIB=work/morris123/MD/hdf5/lib
+# INC=work/morris123/MD/hdf5/include
+LIB=home/morris/Dropbox/Lab/MD/hdf5/lib
+INC=home/morris/Dropbox/Lab/MD/hdf5/include
 
 %.o: %.f03
 	${FC} ${FFLAGS} -o $@ -I/$(INC) -c $<
